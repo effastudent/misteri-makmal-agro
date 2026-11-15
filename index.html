@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="ms">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Misteri Makmal Agro: Kes Bilik Kebal Profesor</title>
+    <meta
+      name="description"
+      content="Permainan bilik melarikan diri misteri 2D bertema Sains Pertanian (ISMP Semester 1, UPSI)."
+    />
+    <meta property="og:title" content="Misteri Makmal Agro: Kes Bilik Kebal Profesor" />
+    <meta
+      property="og:description"
+      content="Permainan bilik melarikan diri misteri 2D bertema Sains Pertanian (ISMP Semester 1, UPSI)."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Google Fonts: Fraunces (Display Mystery), Plus Jakarta Sans (Body/UI), JetBrains Mono (Timer & Data) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="tension-phase-1">
+    <!-- Atmospheric Global Overlays -->
+    <div id="tension-vignette" class="tension-vignette" aria-hidden="true"></div>
+    <div id="penalty-flash" class="penalty-flash" aria-hidden="true"></div>
+
+    <!-- =========================================================
+         1. SKRIN PENDAFTARAN PEMAIN ("KAD AKSES MAKMAL UPSI")
+         ========================================================= -->
+    <section id="registration-screen" class="screen active" aria-label="Kad Akses Makmal UPSI">
+      <!-- Atmospheric Ghost-Case Lab Silhouette Backdrop -->
+      <div class="start-backdrop" aria-hidden="true">
+        <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" class="start-bg-svg">
+          <defs>
+            <radialGradient id="moonGlow" cx="72%" cy="24%" r="48%">
+              <stop offset="0%" stop-color="#2a6f7d" stop-opacity="0.38" />
+              <stop offset="55%" stop-color="#112830" stop-opacity="0.18" />
+              <stop offset="100%" stop-color="#070c0f" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0e1a20" />
+              <stop offset="100%" stop-color="#070c0f" />
+            </linearGradient>
+          </defs>
+          <rect width="1440" height="900" fill="url(#wallGrad)" />
+          <rect width="1440" height="900" fill="url(#moonGlow)" />
+          <!-- Subtle Lab Window Silhouette -->
+          <g stroke="#040709" stroke-width="4" opacity="0.72">
+            <rect x="860" y="90" width="380" height="470" fill="#10252d" />
+            <line x1="1050" y1="90" x2="1050" y2="560" />
+            <line x1="860" y1="260" x2="1240" y2="260" />
+            <line x1="860" y1="410" x2="1240" y2="410" />
+            <!-- Leaf silhouette outside window -->
+            <path d="M890 540 Q940 380 1030 290 Q980 430 920 540 Z" fill="#071115" />
+            <path d="M1110 540 Q1140 370 1220 310 Q1190 450 1150 540 Z" fill="#071115" />
+          </g>
+          <!-- Distant Lab Workbench Silhouette -->
+          <g fill="#080f13" stroke="#030507" stroke-width="3">
+            <rect x="0" y="650" width="1440" height="250" />
+            <path d="M1080 650 L1105 565 L1145 565 L1170 650 Z" fill="#12303a" />
+            <rect x="1113" y="535" width="24" height="32" fill="#183f4c" />
+            <ellipse cx="1260" cy="635" rx="45" ry="12" fill="#0b171d" />
+            <path d="M1245 635 L1245 520 L1275 520 L1275 635" fill="#14323c" />
+            <circle cx="1260" cy="505" r="18" fill="#1b4856" />
+          </g>
+        </svg>
+      </div>
+
+      <!-- Discreet Admin Button (Top-Right) -->
+      <button
+        id="btn-open-admin"
+        type="button"
+        class="btn-admin-discreet"
+        aria-label="Buka Panel Admin"
+      >
+        <span aria-hidden="true">🔐</span>
+        <span>Admin</span>
+      </button>
+
+      <div class="start-layout">
+        <!-- Hero Title Block -->
+        <header class="start-hero">
+          <h1 class="start-title">
+            Misteri Makmal Agro:
+            <span class="start-title-accent">Kes Bilik Kebal Profesor</span>
+          </h1>
+          <p class="start-tagline">Siasatan Bilik Melarikan Diri 2D · Makmal Kuarantin Blok Sains</p>
+        </header>
+
+        <!-- Single Interactive Blue University Matric / Lab Access Card Form -->
+        <form id="registration-form" class="matric-form" novalidate aria-labelledby="access-card-heading">
+          <div class="upsi-matric-card">
+            <!-- Subtle Geometric Security Wave Pattern -->
+            <svg class="matric-card-waves" viewBox="0 0 700 420" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="matricWaveGold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#f2b749" stop-opacity="0.22" />
+                  <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.06" />
+                </linearGradient>
+              </defs>
+              <path d="M-20 320 C120 250 260 390 420 300 C560 220 650 290 730 240 L730 440 L-20 440 Z" fill="url(#matricWaveGold)" />
+              <path d="M-20 355 C140 285 280 410 445 330 C575 265 655 320 730 280" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
+              <path d="M-20 378 C150 312 290 424 460 352 C585 298 665 342 730 308" fill="none" stroke="rgba(242,183,73,0.18)" stroke-width="1.2" />
+              <circle cx="615" cy="70" r="110" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1.5" />
+              <circle cx="615" cy="70" r="78" fill="none" stroke="rgba(242,183,73,0.08)" stroke-width="1.2" />
+            </svg>
+
+            <!-- Top Header Row: Title + EM Smart Chip -->
+            <div class="matric-card-header">
+              <div class="matric-card-brand">
+                <div class="matric-brand-crest" aria-hidden="true">
+                  <svg viewBox="0 0 40 40" width="36" height="36">
+                    <rect x="3" y="3" width="34" height="34" rx="8" fill="#091f3d" stroke="#f2b749" stroke-width="2" />
+                    <path d="M20 9 C15 15 13 21 15 26 C17 30 23 30 25 26 C27 21 25 15 20 9 Z" fill="#f2b749" stroke="#061224" stroke-width="1.6" />
+                    <line x1="20" y1="15" x2="20" y2="29" stroke="#061224" stroke-width="1.6" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 id="access-card-heading" class="matric-card-title">KAD AKSES MAKMAL UPSI</h2>
+                  <p class="matric-card-sub">UNIVERSITI PENDIDIKAN SULTAN IDRIS</p>
+                </div>
+              </div>
+
+              <!-- Metallic Gold/Silver EM Smart Chip SVG -->
+              <div class="matric-smart-chip" aria-hidden="true">
+                <svg viewBox="0 0 54 40" width="50" height="36">
+                  <defs>
+                    <linearGradient id="emChipGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#f7d788" />
+                      <stop offset="48%" stop-color="#d4a23d" />
+                      <stop offset="100%" stop-color="#f1e1b5" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="1.5" y="1.5" width="51" height="37" rx="6" fill="url(#emChipGrad)" stroke="#7a5a18" stroke-width="1.5" />
+                  <rect x="16" y="10" width="22" height="20" rx="3" fill="none" stroke="#6b4e13" stroke-width="1.3" />
+                  <line x1="2" y1="14" x2="16" y2="14" stroke="#6b4e13" stroke-width="1.3" />
+                  <line x1="2" y1="26" x2="16" y2="26" stroke="#6b4e13" stroke-width="1.3" />
+                  <line x1="38" y1="14" x2="52" y2="14" stroke="#6b4e13" stroke-width="1.3" />
+                  <line x1="38" y1="26" x2="52" y2="26" stroke="#6b4e13" stroke-width="1.3" />
+                  <line x1="27" y1="2" x2="27" y2="10" stroke="#6b4e13" stroke-width="1.3" />
+                  <line x1="27" y1="30" x2="27" y2="38" stroke="#6b4e13" stroke-width="1.3" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- 2-Column Interactive Card Body -->
+            <div class="matric-card-body">
+              <!-- Left Column: Live Portrait Photo Box, Gender Toggle, Mini QR -->
+              <div class="matric-card-left">
+                <div class="matric-photo-frame">
+                  <div id="matric-card-portrait" class="matric-photo-box" aria-label="Potret Avatar Penyiasat">
+                    <svg viewBox="0 0 64 64" width="100%" height="100%">
+                      <rect width="64" height="64" fill="#122933" />
+                      <path d="M12 64 C14 48 22 44 32 44 C42 44 50 48 52 64 Z" fill="#e6eff2" stroke="#05080a" stroke-width="2.5" />
+                      <path d="M26 44 L32 54 L38 44" fill="#1d4d5c" stroke="#05080a" stroke-width="2" />
+                      <circle cx="32" cy="27" r="13" fill="#d9b493" stroke="#05080a" stroke-width="2.5" />
+                      <path d="M19 25 C19 14 27 11 33 11 C41 11 45 17 45 25 C41 20 35 19 28 20 C23 20 21 23 19 25 Z" fill="#141b1f" stroke="#05080a" stroke-width="2" />
+                      <circle cx="27" cy="28" r="1.7" fill="#05080a" />
+                      <circle cx="37" cy="28" r="1.7" fill="#05080a" />
+                      <path d="M28 34 Q32 36 36 34" fill="none" stroke="#05080a" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <span class="matric-photo-caption">FOTO PENYIASAT</span>
+                </div>
+
+                <input type="hidden" id="player-avatar" name="playerAvatar" value="male" />
+                <div class="avatar-selector matric-gender-toggle" role="radiogroup" aria-label="Pilih Avatar Penyiasat">
+                  <button
+                    type="button"
+                    class="avatar-option active"
+                    data-avatar="male"
+                    role="radio"
+                    aria-checked="true"
+                  >
+                    <span aria-hidden="true">👨</span>
+                    <span class="avatar-option-label">Lelaki</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="avatar-option"
+                    data-avatar="female"
+                    role="radio"
+                    aria-checked="false"
+                  >
+                    <span aria-hidden="true">👩</span>
+                    <span class="avatar-option-label">Perempuan</span>
+                  </button>
+                </div>
+
+                <!-- Interactive Mini QR Code SVG (Easter Egg) -->
+                <button
+                  type="button"
+                  id="btn-qr-easter-egg"
+                  class="matric-qr-wrap matric-qr-btn"
+                  title="Imbas Kod QR"
+                  aria-label="Imbas Kod QR Rekod Arkib Pembangun Sistem"
+                >
+                  <svg viewBox="0 0 48 48" width="44" height="44" class="matric-qr-svg" aria-hidden="true">
+                    <rect width="48" height="48" rx="4" fill="#ffffff" />
+                    <rect x="4" y="4" width="12" height="12" fill="#0b2447" />
+                    <rect x="6" y="6" width="8" height="8" fill="#ffffff" />
+                    <rect x="8" y="8" width="4" height="4" fill="#0b2447" />
+                    <rect x="32" y="4" width="12" height="12" fill="#0b2447" />
+                    <rect x="34" y="6" width="8" height="8" fill="#ffffff" />
+                    <rect x="36" y="8" width="4" height="4" fill="#0b2447" />
+                    <rect x="4" y="32" width="12" height="12" fill="#0b2447" />
+                    <rect x="6" y="34" width="8" height="8" fill="#ffffff" />
+                    <rect x="8" y="36" width="4" height="4" fill="#0b2447" />
+                    <rect x="20" y="6" width="4" height="4" fill="#0b2447" />
+                    <rect x="26" y="10" width="4" height="6" fill="#0b2447" />
+                    <rect x="20" y="18" width="8" height="4" fill="#0b2447" />
+                    <rect x="6" y="20" width="6" height="4" fill="#0b2447" />
+                    <rect x="14" y="24" width="4" height="6" fill="#0b2447" />
+                    <rect x="22" y="26" width="6" height="4" fill="#0b2447" />
+                    <rect x="32" y="20" width="4" height="8" fill="#0b2447" />
+                    <rect x="38" y="22" width="6" height="4" fill="#0b2447" />
+                    <rect x="20" y="34" width="6" height="4" fill="#0b2447" />
+                    <rect x="28" y="32" width="4" height="8" fill="#0b2447" />
+                    <rect x="36" y="34" width="8" height="4" fill="#0b2447" />
+                    <rect x="34" y="40" width="6" height="4" fill="#0b2447" />
+                  </svg>
+                  <span class="matric-qr-label">SAH KUARANTIN</span>
+                </button>
+              </div>
+
+              <!-- Right Column: ID Tag, Inline Frosted Inputs, Barcode -->
+              <div class="matric-card-right">
+                <div class="matric-id-strip">
+                  <span class="matric-id-tag">ID: UPSI-AGRO-2026</span>
+                  <span class="matric-faculty-tag">SAINS PERTANIAN · SEM 1</span>
+                </div>
+
+                <div class="matric-form-fields">
+                  <div class="matric-field-group">
+                    <label for="player-name" class="matric-field-label">
+                      Nama Pemain <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="player-name"
+                      name="playerName"
+                      class="matric-input"
+                      placeholder="Masukkan Nama Anda..."
+                      maxlength="50"
+                      autocomplete="name"
+                      required
+                    />
+                    <p id="name-error" class="form-error matric-error" role="alert" hidden>
+                      Sila masukkan Nama Pemain untuk mengesahkan kad akses makmal.
+                    </p>
+                  </div>
+
+                  <div class="matric-field-group">
+                    <label for="player-matric" class="matric-field-label">No. Matrik (Pilihan)</label>
+                    <input
+                      type="text"
+                      id="player-matric"
+                      name="playerMatric"
+                      class="matric-input matric-input-mono"
+                      placeholder="No. Matrik (Pilihan)"
+                      maxlength="24"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+
+                <!-- Decorative Barcode SVG -->
+                <div class="matric-card-footer">
+                  <div class="matric-clearance-badge">
+                    <span class="clearance-dot" aria-hidden="true"></span>
+                    <span>AKSES: MAKMAL KUARANTIN</span>
+                  </div>
+                  <div class="matric-barcode-wrap" aria-hidden="true">
+                    <svg viewBox="0 0 180 34" width="160" height="30" class="matric-barcode-svg">
+                      <rect width="180" height="34" rx="3" fill="#ffffff" />
+                      <g fill="#0b2447">
+                        <rect x="8" y="4" width="3" height="22" />
+                        <rect x="13" y="4" width="1.5" height="22" />
+                        <rect x="17" y="4" width="4" height="22" />
+                        <rect x="24" y="4" width="2" height="22" />
+                        <rect x="28" y="4" width="1.5" height="22" />
+                        <rect x="33" y="4" width="3.5" height="22" />
+                        <rect x="39" y="4" width="2" height="22" />
+                        <rect x="44" y="4" width="4.5" height="22" />
+                        <rect x="51" y="4" width="1.5" height="22" />
+                        <rect x="55" y="4" width="2.5" height="22" />
+                        <rect x="61" y="4" width="4" height="22" />
+                        <rect x="67" y="4" width="1.5" height="22" />
+                        <rect x="72" y="4" width="3" height="22" />
+                        <rect x="78" y="4" width="2" height="22" />
+                        <rect x="83" y="4" width="4.5" height="22" />
+                        <rect x="90" y="4" width="1.5" height="22" />
+                        <rect x="95" y="4" width="3" height="22" />
+                        <rect x="101" y="4" width="2" height="22" />
+                        <rect x="106" y="4" width="1.5" height="22" />
+                        <rect x="111" y="4" width="4" height="22" />
+                        <rect x="118" y="4" width="2.5" height="22" />
+                        <rect x="124" y="4" width="1.5" height="22" />
+                        <rect x="128" y="4" width="3.5" height="22" />
+                        <rect x="134" y="4" width="2" height="22" />
+                        <rect x="139" y="4" width="4.5" height="22" />
+                        <rect x="146" y="4" width="1.5" height="22" />
+                        <rect x="150" y="4" width="3" height="22" />
+                        <rect x="156" y="4" width="2" height="22" />
+                        <rect x="161" y="4" width="3.5" height="22" />
+                        <rect x="167" y="4" width="2" height="22" />
+                        <rect x="171" y="4" width="2" height="22" />
+                      </g>
+                      <text x="90" y="32" text-anchor="middle" fill="#0b2447" font-family="JetBrains Mono, monospace" font-size="6.5" font-weight="700">UPSI-AGRO-2026-LAB</text>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matric-submit-row">
+            <button type="submit" id="btn-start-investigation" class="btn-primary btn-matric-submit">
+              <span aria-hidden="true">🪪</span>
+              <span>IMBAS KAD &amp; MASUK MAKMAL</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         2. CUTSCENE INTERAKTIF 4-PANEL (GAYA GHOST CASE)
+         ========================================================= -->
+    <section
+      id="cutscene-screen"
+      class="screen cutscene-overlay"
+      aria-label="Adegan Penceritaan"
+      hidden
+    >
+      <div class="cutscene-topbar">
+        <div id="cutscene-progress" class="cutscene-progress" aria-label="Kemajuan Adegan"></div>
+        <button id="btn-skip-cutscene" type="button" class="btn-skip-cutscene">
+          Langkau (Skip) »
+        </button>
+      </div>
+
+      <div class="cutscene-frame">
+        <!-- Comic Panel Scene Illustration -->
+        <div id="cutscene-visual" class="cutscene-visual"></div>
+
+        <!-- Comic Dialogue Box -->
+        <div
+          id="cutscene-dialogue-box"
+          class="cutscene-dialogue-box"
+          role="button"
+          tabindex="0"
+          aria-label="Klik untuk meneruskan dialog"
+        >
+          <div id="cutscene-portrait" class="speaker-portrait"></div>
+          <div class="cutscene-dialogue-content">
+            <div id="cutscene-speaker" class="cutscene-speaker"></div>
+            <p id="cutscene-text" class="cutscene-text"></p>
+          </div>
+          <button id="btn-next-cutscene" type="button" class="btn-next-cutscene">
+            Seterusnya ▸
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         3. SKRIN PERMAINAN UTAMA (HUD + 5 BILIK + INVENTORI)
+         ========================================================= -->
+    <section id="game-screen" class="screen game-shell" aria-label="Makmal Kuarantin" hidden>
+      <!-- Top HUD Bar -->
+      <header class="hud-bar">
+        <div class="hud-left">
+          <span class="hud-room-code" id="hud-room-code">BILIK 1 / 4</span>
+          <h2 class="hud-room-name" id="hud-room-name">Pintu Keluar &amp; Panel Kawalan</h2>
+        </div>
+
+        <div class="hud-center">
+          <div id="hud-timer-box" class="hud-timer-box" aria-live="off">
+            <span class="hud-timer-label">MASA PENSTERILAN</span>
+            <div class="hud-timer-row">
+              <span id="hud-timer" class="hud-timer">10:00</span>
+              <span id="hud-bonus-badge" class="hud-bonus-badge" aria-live="polite" hidden>+60 SAAT!</span>
+              <span id="hud-paused-badge" class="hud-paused-badge" aria-live="polite" hidden>⏸ MASA DIJEDA (MEMBACA NOTA)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-right">
+          <div class="hud-mistakes" title="Bilangan kesalahan teka-teki">
+            <span class="hud-mistakes-label">Salah:</span>
+            <span id="hud-mistakes-count" class="hud-mistakes-val">0</span>
+          </div>
+
+          <button
+            id="btn-sound-toggle"
+            type="button"
+            class="btn-hud-icon"
+            aria-label="Tukar bunyi kesan khas"
+            title="Bunyi Kesan Khas"
+          >
+            🔊
+          </button>
+
+          <button id="btn-open-notebook" type="button" class="btn-notebook">
+            <span aria-hidden="true">📓</span>
+            <span>Buku Nota Kuliah</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Point-and-Click Viewport -->
+      <main class="viewport-wrapper">
+        <div id="room-stage" class="room-stage">
+          <!-- Room SVG & Hotspots injected dynamically by game.js -->
+          <div id="room-scene-container" class="room-scene-container"></div>
+
+          <!-- Ghost Case Atmospheric Overlays (Vignette, Dust Motes & Subtle Light Flicker) -->
+          <div class="room-flicker-layer" aria-hidden="true"></div>
+          <div class="room-dust-layer" aria-hidden="true">
+            <span class="dust-mote dm-1"></span>
+            <span class="dust-mote dm-2"></span>
+            <span class="dust-mote dm-3"></span>
+            <span class="dust-mote dm-4"></span>
+            <span class="dust-mote dm-5"></span>
+            <span class="dust-mote dm-6"></span>
+            <span class="dust-mote dm-7"></span>
+            <span class="dust-mote dm-8"></span>
+          </div>
+          <div class="room-vignette" aria-hidden="true"></div>
+
+          <!-- Left & Right Directional Navigation Arrows -->
+          <button
+            id="btn-nav-left"
+            type="button"
+            class="nav-arrow nav-arrow-left"
+            aria-label="Bilik sebelumnya"
+          >
+            <span aria-hidden="true">◀</span>
+          </button>
+          <button
+            id="btn-nav-right"
+            type="button"
+            class="nav-arrow nav-arrow-right"
+            aria-label="Bilik seterusnya"
+          >
+            <span aria-hidden="true">▶</span>
+          </button>
+
+          <!-- Subtle Room Compass Indicator (Bottom-right of canvas) -->
+          <nav id="room-compass" class="room-compass" aria-label="Navigasi Bilik"></nav>
+        </div>
+      </main>
+
+      <!-- Bottom Dialogue & 6-Slot Inventory Dock -->
+      <footer class="bottom-dock">
+        <div class="dialogue-bar" id="dialogue-bar">
+          <div id="dialogue-portrait" class="speaker-portrait speaker-portrait-sm"></div>
+          <div class="dialogue-body">
+            <div id="dialogue-speaker" class="dialogue-speaker">Penyiasat</div>
+            <p id="dialogue-text" class="dialogue-text">
+              Aku perlu memeriksa setiap sudut makmal ini untuk mencari jalan keluar.
+            </p>
+          </div>
+        </div>
+
+        <div class="inventory-panel" aria-label="Inventori Barang">
+          <div class="inventory-header">
+            <span class="inventory-title">INVENTORI</span>
+            <span id="inventory-selected-label" class="inventory-selected-label">Tiada dipilih</span>
+          </div>
+          <div id="inventory-slots" class="inventory-slots"></div>
+        </div>
+      </footer>
+    </section>
+
+    <!-- =========================================================
+         4. MODAL BUKU NOTA KULIAH (HINT JOURNAL)
+         ========================================================= -->
+    <div
+      id="notebook-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notebook-title"
+      hidden
+    >
+      <div class="modal-card modal-notebook">
+        <div class="modal-header">
+          <div>
+            <p class="modal-kicker">Rujukan ISMP Sains Pertanian · Semester 1</p>
+            <h2 id="notebook-title" class="modal-title">Buku Nota Kuliah Makmal</h2>
+          </div>
+          <button
+            id="btn-close-notebook"
+            type="button"
+            class="btn-close-modal"
+            aria-label="Tutup Buku Nota"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="notebook-tabs" role="tablist" aria-label="Topik Nota Kuliah">
+          <button type="button" class="notebook-tab active" data-tab="npk" role="tab" aria-selected="true">
+            1. Simptom NPK
+          </button>
+          <button type="button" class="notebook-tab" data-tab="ph" role="tab" aria-selected="false">
+            2. pH &amp; Kapur
+          </button>
+          <button type="button" class="notebook-tab" data-tab="texture" role="tab" aria-selected="false">
+            3. Tekstur USDA
+          </button>
+          <button type="button" class="notebook-tab" data-tab="botany" role="tab" aria-selected="false">
+            4. Monokot vs Dikot
+          </button>
+          <button type="button" class="notebook-tab" data-tab="taxonomy" role="tab" aria-selected="false">
+            5. Taksonomi Buah
+          </button>
+        </div>
+
+        <div id="notebook-content" class="notebook-content"></div>
+
+        <div class="notebook-footer">
+          <span class="notebook-pause-note">⏸ Pemasa dijeda sementara anda membaca nota kuliah.</span>
+          <button id="btn-close-notebook-footer" type="button" class="btn-primary">
+            Tutup Nota
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         5. MODAL PEMERIKSAAN OBJEK (INSPECT / PUZZLE HOOK)
+         ========================================================= -->
+    <div
+      id="inspect-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="inspect-title"
+      hidden
+    >
+      <div class="modal-card modal-inspect">
+        <div class="modal-header">
+          <h2 id="inspect-title" class="modal-title">Pemeriksaan Objek</h2>
+          <button
+            id="btn-close-inspect"
+            type="button"
+            class="btn-close-modal"
+            aria-label="Tutup Pemeriksaan"
+          >
+            ✕
+          </button>
+        </div>
+        <div id="inspect-body" class="inspect-body"></div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         6. MODAL PIN ADMIN
+         ========================================================= -->
+    <div
+      id="admin-pin-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="admin-pin-title"
+      hidden
+    >
+      <div class="modal-card modal-pin">
+        <div class="modal-header">
+          <h2 id="admin-pin-title" class="modal-title">Akses Panel Admin</h2>
+          <button
+            id="btn-close-pin"
+            type="button"
+            class="btn-close-modal"
+            aria-label="Tutup Pengesahan PIN"
+          >
+            ✕
+          </button>
+        </div>
+        <form id="admin-pin-form" class="pin-form" novalidate>
+          <p class="pin-desc">Masukkan kata laluan pentadbir untuk melihat analitik dan rekod pelajar.</p>
+          <div class="form-group">
+            <label for="admin-pin-input" class="form-label">PIN Pentadbir</label>
+            <input
+              type="password"
+              id="admin-pin-input"
+              class="form-input form-input-mono"
+              placeholder="Masukkan PIN"
+              autocomplete="off"
+              required
+            />
+            <p id="admin-pin-error" class="form-error" role="alert" hidden>
+              PIN tidak sah. Sila cuba lagi.
+            </p>
+          </div>
+          <div class="pin-actions">
+            <button type="button" id="btn-cancel-pin" class="btn-secondary">Batal</button>
+            <button type="submit" class="btn-primary">Sahkan PIN</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         7. PAPAN PEMUKA ADMIN (ADMIN DASHBOARD)
+         ========================================================= -->
+    <section
+      id="admin-dashboard"
+      class="modal-backdrop admin-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="admin-dash-title"
+      hidden
+    >
+      <div class="modal-card modal-admin">
+        <div class="modal-header admin-header">
+          <div>
+            <p class="modal-kicker">Analitik Pertandingan Inovasi · ISMP Sains Pertanian UPSI</p>
+            <h2 id="admin-dash-title" class="modal-title">Papan Pemuka Rekod Makmal</h2>
+          </div>
+          <div class="admin-header-actions">
+            <button id="btn-refresh-admin" type="button" class="btn-secondary">
+              🔄 Segar Semula (Refresh)
+            </button>
+            <button id="btn-export-csv" type="button" class="btn-primary">
+              Muat Turun Rekod (.CSV)
+            </button>
+            <button id="btn-clear-records" type="button" class="btn-danger">
+              Padam Semua Rekod
+            </button>
+            <button
+              id="btn-close-admin"
+              type="button"
+              class="btn-secondary"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-scroll-body">
+          <div id="admin-sync-status" class="admin-sync-status" role="status" aria-live="polite" hidden></div>
+
+          <!-- 4 Summary KPI Cards -->
+          <div class="admin-kpi-grid">
+            <div class="kpi-card">
+              <span class="kpi-label">Jumlah Pemain</span>
+              <span id="kpi-total-players" class="kpi-value">0</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Kadar Kejayaan (%)</span>
+              <span id="kpi-success-rate" class="kpi-value">0%</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Purata Masa Tamat</span>
+              <span id="kpi-avg-time" class="kpi-value">—</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Topik Paling Mencabar</span>
+              <span id="kpi-hardest-topic" class="kpi-value kpi-value-sm">—</span>
+            </div>
+          </div>
+
+          <!-- Leaderboard Section -->
+          <div class="admin-section">
+            <h3 class="admin-section-title">Papan Pendahulu (Masa Terpantas)</h3>
+            <div class="table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Ked.</th>
+                    <th>Nama</th>
+                    <th>No. Matrik</th>
+                    <th>Tempoh Tamat</th>
+                    <th>Bil. Salah</th>
+                    <th>Petunjuk</th>
+                    <th>Gred UPSI</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-leaderboard-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Full Player Log Table -->
+          <div class="admin-section">
+            <h3 class="admin-section-title">Log Lengkap Sesi Pemain</h3>
+            <div class="table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Nama</th>
+                    <th>No. Matrik</th>
+                    <th>Tarikh / Masa</th>
+                    <th>Tempoh Tamat</th>
+                    <th>Status</th>
+                    <th>Bilangan Salah (Pecahan)</th>
+                    <th>Petunjuk</th>
+                    <th>Gred UPSI</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-log-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- In-App Confirmation Dialog for Padam Semua Rekod -->
+    <div
+      id="confirm-clear-modal"
+      class="modal-backdrop"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="confirm-clear-title"
+      hidden
+    >
+      <div class="modal-card modal-pin">
+        <div class="modal-header">
+          <h2 id="confirm-clear-title" class="modal-title">Padam Semua Rekod?</h2>
+        </div>
+        <div class="pin-form">
+          <p class="pin-desc">
+            Tindakan ini akan memadamkan semua rekod pemain daripada storan pelayar secara kekal dan tidak boleh dikembalikan.
+          </p>
+          <div class="pin-actions">
+            <button type="button" id="btn-cancel-clear" class="btn-secondary">Batal</button>
+            <button type="button" id="btn-confirm-clear" class="btn-danger">Ya, Padam Semua</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         7B. MODAL EASTER EGG QR: REKOD ARKIB PEMBANGUN SISTEM
+         ========================================================= -->
+    <div
+      id="dev-archive-modal"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dev-archive-title"
+      hidden
+    >
+      <div class="modal-card modal-dev-archive">
+        <div class="modal-header dev-archive-header">
+          <div>
+            <p class="dev-archive-kicker">REKOD ARKIB PEMBANGUN SISTEM · KOD QR DISAHKAN</p>
+            <h2 id="dev-archive-title" class="modal-title">🔒 ARKIB RAHSIA: PEMBANGUN SISTEM</h2>
+          </div>
+          <button
+            id="btn-close-dev-archive"
+            type="button"
+            class="btn-close-modal"
+            aria-label="Tutup Rekod Arkib Pembangun Sistem"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="dev-archive-body">
+          <div class="dev-archive-top">
+            <div class="dev-badge-wrap">
+              <div class="dev-avatar-ring">
+                <!-- Tukar atribut src di bawah sekiranya mahu menggantikan gambar potret pembangun -->
+                <img
+                  id="dev-avatar"
+                  src="./assets/aistudio/passport_pic_40d2a183.jpg"
+                  alt="Pembangun Sistem"
+                  class="dev-avatar-img"
+                />
+              </div>
+              <span class="dev-clearance-chip">PAS KESELAMATAN · ARAS 1</span>
+            </div>
+
+            <div class="dev-meta-col">
+              <div class="dev-meta-row">
+                <span class="dev-meta-label">Program</span>
+                <span class="dev-meta-value">ISMP Sains Pertanian · Universiti Pendidikan Sultan Idris (UPSI)</span>
+              </div>
+              <div class="dev-meta-row">
+                <span class="dev-meta-label">Peranan</span>
+                <span class="dev-meta-value">Pencipta &amp; Pembangun Game "Misteri Makmal Agro"</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dev-roster-box">
+            <h3 class="dev-roster-title">Nama Pembangun (Susunan Abjad)</h3>
+            <ol class="dev-roster-list">
+              <li>
+                <span class="dev-member-name">Cynthia Crystal Liyepa Anak Tikong</span>
+                <span class="dev-member-matric">D20261120772</span>
+              </li>
+              <li>
+                <span class="dev-member-name">Megat Kamarul Khair Shaafiq Bin Kamaruddin</span>
+                <span class="dev-member-matric">D20261120769</span>
+              </li>
+              <li>
+                <span class="dev-member-name">Nur Effa Syazwani Binti Asman</span>
+                <span class="dev-member-matric">D20261120784</span>
+              </li>
+              <li>
+                <span class="dev-member-name">Nur Insyirah Alya Batrisyia Binti Kamarul Rahimi</span>
+                <span class="dev-member-matric">D20261120781</span>
+              </li>
+              <li>
+                <span class="dev-member-name">Syed Ahmad Luqman Bin Syed Ahmad Faizal</span>
+                <span class="dev-member-matric">D20261120773</span>
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="dev-archive-footer">
+          <button id="btn-close-dev-archive-footer" type="button" class="btn-primary">
+            Tutup Arkib Rahsia
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         8. SKRIN TAMAT PERMAINAN (MASA TAMAT / BERJAYA)
+         ========================================================= -->
+    <section
+      id="end-screen"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="end-title"
+      hidden
+    >
+      <div class="modal-card modal-end">
+        <div id="end-emblem" class="end-emblem" aria-hidden="true"></div>
+        <p id="end-kicker" class="end-kicker">Sijil &amp; Keputusan Misi UPSI · ISMP Sains Pertanian</p>
+        <h2 id="end-title" class="end-title">MASA TAMAT — GAS PENSTERILAN DILEPASKAN</h2>
+        <p id="end-subtitle" class="end-subtitle">
+          Sistem kuarantin telah mengunci makmal sepenuhnya sebelum protokol eksperimen berjaya disahkan.
+        </p>
+
+        <div id="victory-certificate-wrap" class="victory-certificate-wrap" hidden>
+          <div id="victory-certificate-preview" class="cert-preview" aria-label="Pratonton Sijil Pencapaian UPSI"></div>
+          <p id="victory-meta-strip" class="victory-meta-strip"></p>
+        </div>
+
+        <div id="end-stats-grid" class="end-stats-grid">
+          <div class="end-stat">
+            <span class="end-stat-label">Penyiasat</span>
+            <span id="end-stat-name" class="end-stat-val">—</span>
+          </div>
+          <div class="end-stat">
+            <span class="end-stat-label">No. Matrik</span>
+            <span id="end-stat-matric" class="end-stat-val">—</span>
+          </div>
+          <div class="end-stat">
+            <span class="end-stat-label">Tempoh Masa Sebenar</span>
+            <span id="end-stat-time" class="end-stat-val">10:00</span>
+          </div>
+          <div class="end-stat">
+            <span class="end-stat-label">Baki Pemasa</span>
+            <span id="end-stat-remaining" class="end-stat-val">00:00</span>
+          </div>
+          <div class="end-stat">
+            <span class="end-stat-label">Teka-Teki Selesai</span>
+            <span id="end-stat-solved" class="end-stat-val">0 / 6</span>
+          </div>
+          <div class="end-stat">
+            <span class="end-stat-label">Bilangan Salah</span>
+            <span id="end-stat-mistakes" class="end-stat-val">0</span>
+          </div>
+          <div class="end-stat">
+            <span class="end-stat-label">Petunjuk Digunakan</span>
+            <span id="end-stat-hints" class="end-stat-val">0</span>
+          </div>
+          <div class="end-stat">
+            <span class="end-stat-label">Status Misi</span>
+            <span id="end-stat-status" class="end-stat-val">—</span>
+          </div>
+          <div class="end-stat end-stat-grade-wide">
+            <span class="end-stat-label">Gred Prestasi UPSI</span>
+            <span id="end-stat-grade" class="end-stat-val">F</span>
+          </div>
+        </div>
+
+        <div class="end-actions">
+          <button id="btn-download-cert" type="button" class="btn-primary btn-cert-download" hidden>
+            📜 Muat Turun Sijil (.PNG)
+          </button>
+          <button id="btn-retry-game" type="button" class="btn-primary">CUBA SEMULA</button>
+          <button id="btn-back-to-start" type="button" class="btn-secondary">
+            Kembali ke Skrin Utama
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
