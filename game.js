@@ -171,6 +171,12 @@ let activeCutscene = {
 const soundManager = (() => {
   let ctx = null;
   let muted = false;
+  let bgmSessionId = 0;
+  let bgmTimerId = null;
+  let currentBgmTrack = null;
+  let desiredBgmTrack = null;
+  let currentBgmBus = null;
+  let activeBgmVoices = [];
 
   function getContext() {
     if (muted) return null;
@@ -198,13 +204,20 @@ const soundManager = (() => {
   function setMuted(nextMuted) {
     muted = Boolean(nextMuted);
     soundEnabled = !muted;
+    if (muted) {
+      stopBGM(0.08, false);
+    } else {
+      unlock();
+      if (desiredBgmTrack) {
+        playBGM(desiredBgmTrack);
+      }
+    }
     return muted;
   }
 
   function toggleMute() {
     setMuted(!muted);
     if (!muted) {
-      unlock();
       playClick();
     }
     return muted;
@@ -685,11 +698,370 @@ const soundManager = (() => {
     }
   }
 
+  function registerBgmVoice(node) {
+    if (activeBgmVoices.length > 64) {
+      activeBgmVoices = activeBgmVoices.slice(-48);
+    }
+    activeBgmVoices.push(node);
+  }
+
+  function stopBGM(fadeSeconds = 0.25, clearDesired = true) {
+    bgmSessionId += 1;
+    if (bgmTimerId !== null) {
+      clearInterval(bgmTimerId);
+      bgmTimerId = null;
+    }
+    currentBgmTrack = null;
+    if (clearDesired) {
+      desiredBgmTrack = null;
+    }
+
+    const oldBus = currentBgmBus;
+    const oldVoices = activeBgmVoices;
+    currentBgmBus = null;
+    activeBgmVoices = [];
+
+    if (oldBus && ctx) {
+      const now = ctx.currentTime;
+      const safeFade = Math.max(0.04, fadeSeconds);
+      try {
+        oldBus.gain.cancelScheduledValues(now);
+        oldBus.gain.setValueAtTime(Math.max(0.0001, oldBus.gain.value || 0.0001), now);
+        oldBus.gain.exponentialRampToValueAtTime(0.0001, now + safeFade);
+      } catch {
+        // Abaikan jika nod telah ditutup
+      }
+      setTimeout(() => {
+        oldVoices.forEach((v) => {
+          try {
+            if (typeof v.stop === 'function') v.stop();
+          } catch {
+            // Abaikan
+          }
+          try {
+            v.disconnect();
+          } catch {
+            // Abaikan
+          }
+        });
+        try {
+          oldBus.disconnect();
+        } catch {
+          // Abaikan
+        }
+      }, Math.round((safeFade + 0.05) * 1000));
+    }
+  }
+
+  function scheduleBgmTone(audio, bus, opts) {
+    if (!audio || !bus) return;
+    const {
+      freq,
+      type = 'triangle',
+      peak = 0.08,
+      attack = 0.015,
+      dur = 0.32,
+      delay = 0,
+      lowpassFreq = 0,
+      detune = 0,
+    } = opts;
+    const t0 = audio.currentTime + delay;
+    try {
+      const osc = audio.createOscillator();
+      const env = audio.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+      if (detune) osc.detune.setValueAtTime(detune, t0);
+
+      env.gain.setValueAtTime(0.0001, t0);
+      env.gain.linearRampToValueAtTime(Math.max(0.0005, peak), t0 + attack);
+      env.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(attack + 0.03, dur));
+
+      if (lowpassFreq > 0) {
+        const lp = audio.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.setValueAtTime(lowpassFreq, t0);
+        osc.connect(lp).connect(env).connect(bus);
+      } else {
+        osc.connect(env).connect(bus);
+      }
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.04);
+      registerBgmVoice(osc);
+    } catch {
+      // Abaikan ralat penjadualan AudioContext
+    }
+  }
+
+  function scheduleBgmClockTick(audio, bus, accented = false) {
+    if (!audio || !bus) return;
+    const t0 = audio.currentTime;
+    try {
+      const osc = audio.createOscillator();
+      const hp = audio.createBiquadFilter();
+      const env = audio.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(accented ? 1680 : 1280, t0);
+      hp.type = 'highpass';
+      hp.frequency.setValueAtTime(950, t0);
+      env.gain.setValueAtTime(accented ? 0.035 : 0.02, t0);
+      env.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.024);
+      osc.connect(hp).connect(env).connect(bus);
+      osc.start(t0);
+      osc.stop(t0 + 0.03);
+      registerBgmVoice(osc);
+    } catch {
+      // Abaikan
+    }
+  }
+
+  function playBGM(trackName) {
+    const validTracks = ['calm', 'tense', 'victory', 'fail'];
+    if (!validTracks.includes(trackName)) return;
+    desiredBgmTrack = trackName;
+
+    if (muted) {
+      stopBGM(0.08, false);
+      return;
+    }
+
+    if (currentBgmTrack === trackName && bgmTimerId !== null) {
+      return;
+    }
+
+    const audio = getContext();
+    if (!audio) return;
+
+    stopBGM(0.24, false);
+    const sessionId = bgmSessionId;
+    currentBgmTrack = trackName;
+
+    const bus = audio.createGain();
+    const targetVolume =
+      trackName === 'victory' ? 0.125 : trackName === 'calm' ? 0.115 : 0.12;
+    const now = audio.currentTime;
+    bus.gain.setValueAtTime(0.0001, now);
+    bus.gain.linearRampToValueAtTime(targetVolume, now + 0.35);
+    bus.connect(audio.destination);
+    currentBgmBus = bus;
+
+    let step = 0;
+
+    if (trackName === 'calm') {
+      // Trek 1: Arpeggio Marimba / Piano Elektrik Kampus Ceria (~112 BPM)
+      const melody = [
+        261.63, 329.63, 392.0, 493.88, 392.0, 329.63, 523.25, 493.88,
+        349.23, 440.0, 523.25, 659.25, 523.25, 440.0, 349.23, 440.0,
+        220.0, 261.63, 329.63, 392.0, 329.63, 261.63, 440.0, 392.0,
+        196.0, 246.94, 293.66, 329.63, 293.66, 246.94, 392.0, 293.66,
+      ];
+      const bassRoots = [130.81, 174.61, 110.0, 98.0];
+      const runCalmStep = () => {
+        if (muted || sessionId !== bgmSessionId) return;
+        const idx = step % melody.length;
+        const freq = melody[idx];
+        scheduleBgmTone(audio, bus, {
+          freq,
+          type: 'triangle',
+          peak: 0.42,
+          attack: 0.012,
+          dur: 0.36,
+          lowpassFreq: 2200,
+        });
+        scheduleBgmTone(audio, bus, {
+          freq: freq * 2,
+          type: 'sine',
+          peak: 0.08,
+          attack: 0.008,
+          dur: 0.18,
+        });
+        if (idx % 8 === 0) {
+          const bassFreq = bassRoots[Math.floor(idx / 8) % bassRoots.length];
+          scheduleBgmTone(audio, bus, {
+            freq: bassFreq,
+            type: 'sine',
+            peak: 0.36,
+            attack: 0.025,
+            dur: 1.45,
+          });
+        }
+        step += 1;
+      };
+      runCalmStep();
+      bgmTimerId = setInterval(runCalmStep, 268);
+    } else if (trackName === 'tense') {
+      // Trek 2: Denyut Misteri "Ghost Case" — Bass Degupan Jantung + Jam + Pad Minor (~108 BPM)
+      const bassPattern = [
+        65.41, 0, 65.41, 0, 0, 0, 0, 0,
+        73.42, 0, 73.42, 0, 82.41, 0, 98.0, 0,
+      ];
+      const padChords = [
+        [261.63, 311.13, 392.0], // Cm
+        [207.65, 261.63, 311.13], // Ab
+        [196.0, 246.94, 293.66], // G
+        [261.63, 311.13, 392.0], // Cm
+      ];
+      const eerieBells = [783.99, 622.25, 587.33, 783.99];
+      const runTenseStep = () => {
+        if (muted || sessionId !== bgmSessionId) return;
+        const idx = step % 16;
+        const bassFreq = bassPattern[idx];
+        if (bassFreq > 0) {
+          scheduleBgmTone(audio, bus, {
+            freq: bassFreq,
+            type: 'sine',
+            peak: 0.56,
+            attack: 0.015,
+            dur: 0.3,
+          });
+          scheduleBgmTone(audio, bus, {
+            freq: bassFreq * 2,
+            type: 'triangle',
+            peak: 0.14,
+            attack: 0.015,
+            dur: 0.22,
+            lowpassFreq: 320,
+          });
+        }
+        if (idx % 2 === 0) {
+          scheduleBgmClockTick(audio, bus, idx % 4 === 0);
+        }
+        if (idx % 8 === 0) {
+          const chord = padChords[Math.floor(step / 8) % padChords.length];
+          chord.forEach((noteFreq) => {
+            scheduleBgmTone(audio, bus, {
+              freq: noteFreq,
+              type: 'sawtooth',
+              peak: 0.085,
+              attack: 0.35,
+              dur: 2.05,
+              lowpassFreq: 720,
+            });
+          });
+        }
+        if (idx === 6 || idx === 14) {
+          const bell = eerieBells[Math.floor(step / 8) % eerieBells.length];
+          scheduleBgmTone(audio, bus, {
+            freq: bell,
+            type: 'sine',
+            peak: 0.12,
+            attack: 0.015,
+            dur: 0.65,
+          });
+        }
+        step += 1;
+      };
+      runTenseStep();
+      bgmTimerId = setInterval(runTenseStep, 278);
+    } else if (trackName === 'victory') {
+      // Trek 3: Progresi Kemenangan & Kelegaan (Brass / Loceng Major ~102 BPM)
+      const melody = [
+        523.25, 659.25, 783.99, 1046.5, 987.77, 783.99, 880.0, 0,
+        880.0, 698.46, 880.0, 1046.5, 1174.66, 1046.5, 783.99, 1046.5,
+      ];
+      const chords = [
+        [261.63, 329.63, 392.0], // C
+        [196.0, 246.94, 293.66], // G
+        [174.61, 220.0, 261.63], // F
+        [261.63, 329.63, 392.0], // C
+      ];
+      const runVictoryStep = () => {
+        if (muted || sessionId !== bgmSessionId) return;
+        const idx = step % 16;
+        const mFreq = melody[idx];
+        if (mFreq > 0) {
+          scheduleBgmTone(audio, bus, {
+            freq: mFreq,
+            type: 'triangle',
+            peak: 0.34,
+            attack: 0.018,
+            dur: 0.44,
+          });
+          scheduleBgmTone(audio, bus, {
+            freq: mFreq,
+            type: 'sine',
+            peak: 0.16,
+            attack: 0.015,
+            dur: 0.48,
+          });
+        }
+        if (idx % 4 === 0) {
+          const chord = chords[Math.floor(idx / 4) % chords.length];
+          chord.forEach((cFreq) => {
+            scheduleBgmTone(audio, bus, {
+              freq: cFreq,
+              type: 'sawtooth',
+              peak: 0.095,
+              attack: 0.08,
+              dur: 1.1,
+              lowpassFreq: 1150,
+            });
+          });
+          scheduleBgmTone(audio, bus, {
+            freq: chord[0] / 2,
+            type: 'sine',
+            peak: 0.32,
+            attack: 0.03,
+            dur: 1.05,
+          });
+        }
+        step += 1;
+      };
+      runVictoryStep();
+      bgmTimerId = setInterval(runVictoryStep, 294);
+    } else if (trackName === 'fail') {
+      // Trek 4: Penurunan Piano / Strings Minor Dramatik & Sayu (~68 BPM)
+      const descent = [
+        311.13, 293.66, 261.63, 233.08, 207.65, 196.0, 174.61, 196.0,
+        311.13, 293.66, 261.63, 0, 207.65, 196.0, 130.81, 0,
+      ];
+      const drones = [
+        [65.41, 130.81, 155.56],
+        [51.91, 103.83, 155.56],
+        [49.0, 98.0, 146.83],
+        [65.41, 130.81, 155.56],
+      ];
+      const runFailStep = () => {
+        if (muted || sessionId !== bgmSessionId) return;
+        const idx = step % 16;
+        const note = descent[idx];
+        if (note > 0) {
+          scheduleBgmTone(audio, bus, {
+            freq: note,
+            type: 'triangle',
+            peak: 0.34,
+            attack: 0.03,
+            dur: 0.85,
+            lowpassFreq: 920,
+          });
+        }
+        if (idx % 4 === 0) {
+          const pad = drones[Math.floor(idx / 4) % drones.length];
+          pad.forEach((pFreq) => {
+            scheduleBgmTone(audio, bus, {
+              freq: pFreq,
+              type: 'sine',
+              peak: 0.18,
+              attack: 0.25,
+              dur: 1.72,
+            });
+          });
+        }
+        step += 1;
+      };
+      runFailStep();
+      bgmTimerId = setInterval(runFailStep, 440);
+    }
+  }
+
   return {
     unlock,
     isMuted,
     setMuted,
     toggleMute,
+    playBGM,
+    stopBGM,
+    getCurrentBGM: () => currentBgmTrack,
     playClick,
     playTypewriter,
     playSuccess,
@@ -800,6 +1172,7 @@ const dom = {
   hudPausedBadge: document.getElementById('hud-paused-badge'),
   hudMistakesCount: document.getElementById('hud-mistakes-count'),
   btnSoundToggle: document.getElementById('btn-sound-toggle'),
+  soundToggleButtons: document.querySelectorAll('.js-sound-toggle'),
   btnOpenNotebook: document.getElementById('btn-open-notebook'),
 
   roomSceneContainer: document.getElementById('room-scene-container'),
@@ -1488,7 +1861,10 @@ function buildIntroCutscene(playerName) {
       speaker: playerName,
       speakerType: 'player',
       emotion: 'neutral',
-      sfx: 'pickup',
+      onEnterSound: () => {
+        playSFX('pickup');
+        soundManager.playBGM('calm');
+      },
       text: 'BIP! Kad akses makmal UPSI berjaya diimbas. Baiklah, aku nak semak sampel tugasan Semester 1 dulu sebelum balik...',
     },
     {
@@ -1504,7 +1880,10 @@ function buildIntroCutscene(playerName) {
       speaker: playerName,
       speakerType: 'player',
       emotion: 'neutral',
-      onEnterSound: () => soundManager.playDoorSlamLock(),
+      onEnterSound: () => {
+        soundManager.playDoorSlamLock();
+        soundManager.playBGM('tense');
+      },
       text: 'KLANG!! Bunyi apa tu?! Pintu utama... terkunci rapat?! Kenapa penggera kecemasan tiba-tiba menyala?',
     },
     {
@@ -1533,7 +1912,10 @@ function buildVictoryCutscene(playerName) {
       speaker: playerName,
       speakerType: 'player',
       emotion: 'happy',
-      onEnterSound: () => soundManager.playDoorOpen(),
+      onEnterSound: () => {
+        soundManager.playDoorOpen();
+        soundManager.playBGM('victory');
+      },
       text: 'KLIK... ZZZT! Kunci magnetik pintu utama akhirnya terlepas! Lampu amaran merah dah bertukar hijau!',
     },
     {
@@ -1893,6 +2275,7 @@ function triggerGameOver() {
   closeAllGameplayModals();
   updateTimerAndTensionUI();
   soundManager.playDoorSlamLock();
+  soundManager.playBGM('fail');
 
   const savedRecord = saveGameRecord('MASA TAMAT');
   const gameOverPanels = buildGameOverCutscene(gameState.playerName || 'Penyiasat');
@@ -1912,6 +2295,7 @@ function completeGame() {
   closeAllGameplayModals();
   updateTimerAndTensionUI();
   soundManager.playWinFanfare();
+  soundManager.playBGM('victory');
 
   const savedRecord = saveGameRecord('BERJAYA');
   showEndScreen('BERJAYA', savedRecord);
@@ -2851,14 +3235,14 @@ function renderRoomSVG(viewId) {
           </g>
 
           <!-- Pintu Sisi Terlindung (Bilik Rahsia view5) -->
-          <g class="hotspot" data-hotspot="v1_secret_hatch" tabindex="0" role="button" aria-label="Periksa Panel Dinding Misteri">
-            <rect class="hotspot-outline" x="905" y="170" width="135" height="320" rx="4" fill="#101d24" stroke="#040709" stroke-width="4"/>
+          <g class="hotspot" data-hotspot="v1_secret_hatch" tabindex="0" role="button" aria-label="${gameState.secretRoomUnlocked ? 'Masuk ke Bilik 5 Bio-Vault' : 'Periksa Pintu Bio-Vault'}">
+            <rect class="hotspot-outline" x="905" y="170" width="135" height="320" rx="4" fill="${gameState.secretRoomUnlocked ? '#132d28' : '#101d24'}" stroke="#040709" stroke-width="4"/>
             <line x1="920" y1="210" x2="1025" y2="210" stroke="#060b0e" stroke-width="3"/>
             <line x1="920" y1="440" x2="1025" y2="440" stroke="#060b0e" stroke-width="3"/>
-            <circle cx="928" cy="330" r="8" fill="#2b4552" stroke="#040709" stroke-width="2.5"/>
+            <circle cx="928" cy="330" r="8" fill="${gameState.secretRoomUnlocked ? '#2ea877' : '#2b4552'}" stroke="#040709" stroke-width="2.5"/>
             <g class="hotspot-hint-tag">
-              <rect x="890" y="132" width="165" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
-              <text x="972" y="151" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">Pintu Bio-Vault (?)</text>
+              <rect x="890" y="132" width="165" height="28" rx="4" fill="#05080a" stroke="${gameState.secretRoomUnlocked ? '#4ade80' : '#f2b749'}" stroke-width="1.5"/>
+              <text x="972" y="151" text-anchor="middle" fill="${gameState.secretRoomUnlocked ? '#6ee7b7' : '#f2b749'}" font-size="13" font-weight="700">${gameState.secretRoomUnlocked ? 'Pintu Bio-Vault ▸' : 'Pintu Bio-Vault (?)'}</text>
             </g>
           </g>
         </svg>
@@ -5198,6 +5582,15 @@ function openEcCalibrationModal() {
 function handleHotspotClick(hotspotId) {
   playSFX('click');
 
+  if (hotspotId === 'v1_secret_hatch') {
+    if (gameState.secretRoomUnlocked) {
+      navigateToRoom('view5');
+    } else {
+      showDialogue(gameState.playerName, 'Terkunci...', 'normal');
+    }
+    return;
+  }
+
   // --- VIEW 1: KUTIPAN KUNCI TEMBAGA KECIL & INTERAKSI PINTU ---
   if (hotspotId === 'v1_copper_key' && !gameState.flags.pickedCopperKey) {
     gameState.flags.pickedCopperKey = true;
@@ -5597,11 +5990,6 @@ function handleHotspotClick(hotspotId) {
       clue: gameState.puzzles.controlPanel
         ? 'Status: <strong>DINYAHAKTIFKAN</strong>. Bacaan EC 1.8 mS/cm stabil.'
         : 'Status: <strong>TERKUNCI RAPAT</strong>. Kunci magnetik disambungkan ke <strong>Kotak Fius</strong> di sebelah kiri pintu. Selesaikan protokol makmal untuk mendapatkan peralatan dan bacaan EC.',
-    },
-    v1_secret_hatch: {
-      title: 'Pintu Tersembunyi Bio-Vault',
-      thought: 'Ada garisan pintu rahsia di balik dinding keluli ini! Bagaimana cara membukanya ya?',
-      clue: 'Akses ke <strong>Bilik 5 (Bilik Rahsia Kuarantin)</strong> dikawal melalui mekanisme tersembunyi di Bilik 2 (Meja Kerja & Carta Tanah).',
     },
     v2_prof_log: {
       title: 'Buku Log Profesor Razak',
@@ -6479,6 +6867,7 @@ function beginPlayableLabSession() {
   gameState.playStartTime = Date.now();
   gameState.totalElapsedSeconds = 0;
 
+  soundManager.playBGM('tense');
   renderInventory();
   navigateToRoom('view1', true);
   startCountdownTimer();
@@ -6497,6 +6886,7 @@ function resetToRegistrationScreen() {
   dom.cutsceneScreen.classList.remove('active');
   dom.registrationScreen.hidden = false;
   dom.registrationScreen.classList.add('active');
+  soundManager.playBGM('calm');
   if (dom.playerAvatarInput) dom.playerAvatarInput.value = 'male';
   if (dom.avatarOptions && dom.avatarOptions.length > 0) {
     dom.avatarOptions.forEach((opt) => {
@@ -6625,22 +7015,59 @@ function initEventListeners() {
   dom.btnNavLeft.addEventListener('click', () => cycleRoom(-1));
   dom.btnNavRight.addEventListener('click', () => cycleRoom(1));
 
-  // Buka kunci enjin audio Web Audio API pada interaksi pertama pengguna
-  document.addEventListener(
-    'pointerdown',
-    () => {
-      soundManager.unlock();
-    },
-    { once: true }
-  );
+  // Buka kunci enjin audio & mulakan muzik latar tenang secara patuh dasar pelayar
+  const startInitialAudio = (e) => {
+    if (e && e.target && typeof e.target.closest === 'function' && e.target.closest('.js-sound-toggle')) {
+      return;
+    }
+    soundManager.unlock();
+    if (!soundManager.isMuted() && !soundManager.getCurrentBGM()) {
+      const onStartScreen =
+        dom.registrationScreen && !dom.registrationScreen.hidden && dom.registrationScreen.classList.contains('active');
+      if (onStartScreen) {
+        soundManager.playBGM('calm');
+      }
+    }
+  };
+  document.addEventListener('pointerdown', startInitialAudio, { once: true });
+  document.addEventListener('keydown', startInitialAudio, { once: true });
 
   // 4. Bunyi & Buku Nota Kuliah
-  dom.btnSoundToggle.addEventListener('click', () => {
+  const syncSoundButtons = (isMuted) => {
+    const label = isMuted ? '🔇 Senyap' : '🔊 Muzik';
+    const title = isMuted ? 'Muzik & Bunyi Dimatikan' : 'Muzik & Bunyi Aktif';
+    const buttons =
+      dom.soundToggleButtons && dom.soundToggleButtons.length > 0
+        ? dom.soundToggleButtons
+        : [dom.btnSoundToggle].filter(Boolean);
+    buttons.forEach((btn) => {
+      btn.textContent = label;
+      btn.title = title;
+      btn.setAttribute('aria-pressed', String(isMuted));
+      btn.classList.toggle('is-muted', isMuted);
+    });
+  };
+  syncSoundButtons(soundManager.isMuted());
+
+  const handleToggleMuteClick = () => {
     const isMuted = soundManager.toggleMute();
-    dom.btnSoundToggle.textContent = isMuted ? '🔇' : '🔊';
-    dom.btnSoundToggle.title = isMuted ? 'Bunyi Dimatikan' : 'Bunyi Aktif';
-    dom.btnSoundToggle.setAttribute('aria-pressed', String(isMuted));
-  });
+    syncSoundButtons(isMuted);
+    if (!isMuted && !soundManager.getCurrentBGM()) {
+      const onStartScreen =
+        dom.registrationScreen && !dom.registrationScreen.hidden && dom.registrationScreen.classList.contains('active');
+      if (onStartScreen) {
+        soundManager.playBGM('calm');
+      }
+    }
+  };
+
+  if (dom.soundToggleButtons && dom.soundToggleButtons.length > 0) {
+    dom.soundToggleButtons.forEach((btn) => {
+      btn.addEventListener('click', handleToggleMuteClick);
+    });
+  } else if (dom.btnSoundToggle) {
+    dom.btnSoundToggle.addEventListener('click', handleToggleMuteClick);
+  }
 
   dom.btnOpenNotebook.addEventListener('click', openNotebookModal);
   dom.btnCloseNotebook.addEventListener('click', () => closeNotebookModal());

@@ -240,11 +240,46 @@ body.tension-phase-3 .tension-vignette {
   display: block;
 }
 
-.btn-admin-discreet {
+.start-top-controls {
   position: fixed;
   top: 18px;
   right: 22px;
   z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sound-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(155, 179, 189, 0.28);
+  background: rgba(13, 22, 28, 0.78);
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.btn-sound-pill:hover {
+  border-color: #67e8f9;
+  background: rgba(18, 33, 41, 0.95);
+}
+
+.btn-sound-pill.is-muted {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(34, 15, 20, 0.82);
+}
+
+.btn-admin-discreet {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -782,7 +817,14 @@ body.tension-phase-3 .tension-vignette {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 14px;
+}
+
+.cutscene-topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .cutscene-progress {
@@ -1127,6 +1169,34 @@ body.tension-phase-3 .hud-timer {
 
 .btn-hud-icon:hover {
   background: var(--surface-elevated);
+}
+
+.btn-hud-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  background: var(--surface-teal);
+  color: var(--text-primary);
+  border: 2px solid var(--ink-black);
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-hud-sound:hover {
+  background: var(--surface-elevated);
+  border-color: #67e8f9;
+}
+
+.btn-hud-sound.is-muted {
+  background: #2b1318;
+  color: #fca5a5;
+  border-color: #7f1d1d;
 }
 
 .btn-notebook {
@@ -3394,11 +3464,22 @@ body.tension-phase-3 .hud-timer {
     padding: 62px 14px 28px;
   }
 
-  .btn-admin-discreet {
+  .start-top-controls {
     top: 12px;
     right: 14px;
+    gap: 6px;
+  }
+
+  .btn-sound-pill,
+  .btn-admin-discreet {
     min-height: 36px;
-    padding: 6px 11px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .btn-hud-sound {
+    min-height: 36px;
+    padding: 5px 9px;
     font-size: 0.78rem;
   }
 

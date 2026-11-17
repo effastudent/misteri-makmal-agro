@@ -73,16 +73,28 @@
         </svg>
       </div>
 
-      <!-- Discreet Admin Button (Top-Right) -->
-      <button
-        id="btn-open-admin"
-        type="button"
-        class="btn-admin-discreet"
-        aria-label="Buka Panel Admin"
-      >
-        <span aria-hidden="true">🔐</span>
-        <span>Admin</span>
-      </button>
+      <!-- Top-Right Controls: Mute Toggle + Discreet Admin Button -->
+      <div class="start-top-controls">
+        <button
+          id="btn-start-sound-toggle"
+          type="button"
+          class="btn-sound-pill js-sound-toggle"
+          aria-pressed="false"
+          aria-label="Matikan atau aktifkan muzik dan kesan bunyi"
+          title="Muzik & Bunyi Aktif"
+        >
+          🔊 Muzik
+        </button>
+        <button
+          id="btn-open-admin"
+          type="button"
+          class="btn-admin-discreet"
+          aria-label="Buka Panel Admin"
+        >
+          <span aria-hidden="true">🔐</span>
+          <span>Admin</span>
+        </button>
+      </div>
 
       <div class="start-layout">
         <!-- Hero Title Block -->
@@ -342,9 +354,21 @@
     >
       <div class="cutscene-topbar">
         <div id="cutscene-progress" class="cutscene-progress" aria-label="Kemajuan Adegan"></div>
-        <button id="btn-skip-cutscene" type="button" class="btn-skip-cutscene">
-          Langkau (Skip) »
-        </button>
+        <div class="cutscene-topbar-actions">
+          <button
+            id="btn-cutscene-sound-toggle"
+            type="button"
+            class="btn-sound-pill js-sound-toggle"
+            aria-pressed="false"
+            aria-label="Matikan atau aktifkan muzik dan kesan bunyi"
+            title="Muzik & Bunyi Aktif"
+          >
+            🔊 Muzik
+          </button>
+          <button id="btn-skip-cutscene" type="button" class="btn-skip-cutscene">
+            Langkau (Skip) »
+          </button>
+        </div>
       </div>
 
       <div class="cutscene-frame">
@@ -402,11 +426,12 @@
           <button
             id="btn-sound-toggle"
             type="button"
-            class="btn-hud-icon"
-            aria-label="Tukar bunyi kesan khas"
-            title="Bunyi Kesan Khas"
+            class="btn-hud-sound js-sound-toggle"
+            aria-pressed="false"
+            aria-label="Matikan atau aktifkan muzik dan kesan bunyi"
+            title="Muzik & Bunyi Aktif"
           >
-            🔊
+            🔊 Muzik
           </button>
 
           <button id="btn-open-notebook" type="button" class="btn-notebook">
