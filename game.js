@@ -1452,7 +1452,7 @@ function updateMatricCardPortrait(avatar) {
 function getCutscenePanelSVG(visualId) {
   switch (visualId) {
     case 'card_swipe': {
-      const cardName = escapeSvgText((gameState.playerName || 'PENYIASAT UPSI').toUpperCase().slice(0, 26));
+      const cardName = escapeSvgText((gameState.playerName || 'PELAJAR UPSI').toUpperCase().slice(0, 26));
       const cardMatric = escapeSvgText((gameState.matricNo || 'PELAWAT MAKMAL').toUpperCase().slice(0, 20));
       const cardGender = escapeSvgText((gameState.playerGender || (gameState.avatar === 'female' ? 'Perempuan' : 'Lelaki')).toUpperCase());
       const portraitInner = getPlayerPortraitSVG(gameState.avatar || 'male', 'neutral');
@@ -1534,7 +1534,7 @@ function getCutscenePanelSVG(visualId) {
               <rect x="142" y="76" width="132" height="22" rx="4" fill="rgba(7,20,42,0.72)" stroke="rgba(242,183,73,0.65)" stroke-width="1"/>
               <text x="150" y="91" fill="#fde68a" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">ID: UPSI-AGRO-2026</text>
 
-              <text x="142" y="118" fill="#bfdbfe" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="700">NAMA PENYIASAT</text>
+              <text x="142" y="118" fill="#bfdbfe" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="700">NAMA PELAJAR</text>
               <text x="142" y="139" fill="#ffffff" font-family="Plus Jakarta Sans, sans-serif" font-size="16" font-weight="700">${cardName}</text>
 
               <text x="142" y="164" fill="#bfdbfe" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="700">NO. MATRIK</text>
@@ -2443,7 +2443,7 @@ function triggerGameOver() {
   soundManager.playBGM('fail');
 
   const savedRecord = saveGameRecord('MASA TAMAT');
-  const gameOverPanels = buildGameOverCutscene(gameState.playerName || 'Penyiasat');
+  const gameOverPanels = buildGameOverCutscene(gameState.playerName || 'Pelajar');
   triggerCutscene(gameOverPanels, () => {
     showEndScreen('MASA TAMAT', savedRecord);
   });
@@ -2495,7 +2495,7 @@ function formatCertificateGrade(gradeText) {
 
 function renderVictoryCertificatePreview(record) {
   if (!dom.victoryCertificatePreview) return;
-  const playerName = escapeHtml(record.nama || 'Penyiasat UPSI');
+  const playerName = escapeHtml(record.nama || 'Pelajar UPSI');
   const rawMatric = String(record.noMatrik || '').trim();
   const hasMatric = Boolean(rawMatric && rawMatric !== '-');
   const avatarType = record.avatar || gameState.avatar || 'male';
@@ -2868,7 +2868,7 @@ async function generateCertificateCanvas(record) {
   ctx.font = 'italic 18px "Plus Jakarta Sans", Georgia, serif';
   ctx.fillText('Dengan ini diperakui bahawa', width / 2, 428);
 
-  const playerName = String(record.nama || 'Penyiasat UPSI').trim();
+  const playerName = String(record.nama || 'Pelajar UPSI').trim();
   ctx.font = '700 44px "Fraunces", Georgia, serif';
   // Halus bayangan emas + teks navy gelap
   ctx.fillStyle = 'rgba(184, 136, 46, 0.32)';
@@ -3038,10 +3038,10 @@ async function downloadVictoryCertificate(record) {
   try {
     const canvas = await generateCertificateCanvas(targetRecord);
     const safeName =
-      String(targetRecord.nama || 'Penyiasat')
+      String(targetRecord.nama || 'Pelajar')
         .trim()
         .replace(/[^a-zA-Z0-9_-]+/g, '_')
-        .replace(/^_+|_+$/g, '') || 'Penyiasat';
+        .replace(/^_+|_+$/g, '') || 'Pelajar';
     const fileName = `Sijil_Escape_Makmal_Agro_${safeName}.png`;
 
     const triggerLinkDownload = (href, revokeAfter) => {
@@ -6237,7 +6237,7 @@ function getInventoryItemSVG(itemId) {
 }
 
 function showDialogue(speaker, text, mood = 'normal') {
-  dom.dialogueSpeaker.textContent = speaker || gameState.playerName || 'Penyiasat';
+  dom.dialogueSpeaker.textContent = speaker || gameState.playerName || 'Pelajar';
   dom.dialogueSpeaker.classList.toggle('mood-warning', mood === 'warning');
   dom.dialogueSpeaker.classList.toggle('mood-bonus', mood === 'bonus');
   dom.dialogueText.textContent = text;
@@ -6857,7 +6857,7 @@ function renderAdminDashboard(recordsOverride) {
   if (leaderboard.length === 0) {
     dom.adminLeaderboardBody.innerHTML = `
       <tr>
-        <td colspan="7" class="empty-row">Belum ada penyiasat yang berjaya melarikan diri setakat ini.</td>
+        <td colspan="7" class="empty-row">Belum ada pelajar yang berjaya melarikan diri setakat ini.</td>
       </tr>
     `;
   } else {
