@@ -1,5 +1,5 @@
 /* ============================================================================
-   MISTERI MAKMAL AGRO: KES BILIK KEBAL PROFESOR
+   ESCAPE: MAKMAL AGRO
    ISMP Sains Pertanian (Semester 1) · Universiti Pendidikan Sultan Idris (UPSI)
    Bahagian 1: Asas Permainan, Pendaftaran, Cutscene 4-Panel, Pemasa 3-Fasa,
                Navigasi 5 Bilik, Inventori, Buku Nota Kuliah & Papan Pemuka Admin
@@ -1785,7 +1785,7 @@ function getCutscenePanelSVG(visualId) {
           <path d="M410 510 C420 350 450 295 485 295 C520 295 545 350 555 510 Z" fill="#e6eff2" stroke="#040709" stroke-width="4"/>
           <circle cx="482" cy="245" r="36" fill="#d9b493" stroke="#040709" stroke-width="4"/>
           <path d="M447 239 C448 206 472 198 492 200 C512 202 518 220 517 240 Z" fill="#141b1f" stroke="#040709" stroke-width="3"/>
-          <text x="480" y="106" text-anchor="middle" fill="#fef08a" font-family="Fraunces, serif" font-size="32" font-weight="700" stroke="#040709" stroke-width="1.5">KES BILIK KEBAL PROFESOR SELESAI!</text>
+          <text x="480" y="106" text-anchor="middle" fill="#fef08a" font-family="Fraunces, serif" font-size="32" font-weight="700" stroke="#040709" stroke-width="1.5">MISI ESCAPE: MAKMAL AGRO SELESAI!</text>
         </svg>
       `;
 
@@ -2518,7 +2518,7 @@ function renderVictoryCertificatePreview(record) {
         </svg>
         <p class="cert-uni">UNIVERSITI PENDIDIKAN SULTAN IDRIS (UPSI)</p>
         <p class="cert-program">PROGRAM ISMP SAINS PERTANIAN (SEMESTER 1)</p>
-        <h3 class="cert-title">SIJIL PENCAPAIAN MISI MAKMAL</h3>
+        <h3 class="cert-title">SIJIL PENCAPAIAN ESCAPE: MAKMAL AGRO</h3>
         <div class="cert-divider" aria-hidden="true"></div>
       </header>
 
@@ -2530,7 +2530,7 @@ function renderVictoryCertificatePreview(record) {
         <p class="cert-player-name">${playerName}</p>
         ${hasMatric ? `<p class="cert-player-matric">No. Matrik: ${escapeHtml(rawMatric)}</p>` : ''}
         <p class="cert-citation">
-          Telah berjaya menyelesaikan kesemua 6 protokol eksperimen Sains Pertanian dan membatalkan sistem kuarantin Bilik Kebal Profesor Razak.
+          Telah berjaya menyelesaikan kesemua 6 protokol eksperimen Sains Pertanian dan melepaskan diri daripada sistem penguncian Makmal Agro.
         </p>
       </div>
 
@@ -2565,7 +2565,7 @@ function renderVictoryCertificatePreview(record) {
           </svg>
           <div class="cert-signature-line"></div>
           <p class="cert-signature-name">Prof. Dr. Razak bin Ahmad</p>
-          <p class="cert-signature-role">Ketua Makmal Kuarantin Agro · UPSI</p>
+          <p class="cert-signature-role">Ketua Makmal Agro · UPSI</p>
         </div>
       </footer>
     </div>
@@ -2848,8 +2848,8 @@ async function generateCertificateCanvas(record) {
   ctx.fillText('PROGRAM ISMP SAINS PERTANIAN (SEMESTER 1)', width / 2, 204);
 
   ctx.fillStyle = '#0b1f31';
-  ctx.font = '700 38px "Fraunces", Georgia, serif';
-  ctx.fillText('SIJIL PENCAPAIAN MISI MAKMAL', width / 2, 256);
+  ctx.font = '700 34px "Fraunces", Georgia, serif';
+  ctx.fillText('SIJIL PENCAPAIAN ESCAPE: MAKMAL AGRO', width / 2, 256);
 
   // Garis pemisah emas
   const divGrad = ctx.createLinearGradient(360, 0, 840, 0);
@@ -2898,7 +2898,7 @@ async function generateCertificateCanvas(record) {
     citationY
   );
   ctx.fillText(
-    'membatalkan sistem kuarantin Bilik Kebal Profesor Razak.',
+    'melepaskan diri daripada sistem penguncian Makmal Agro.',
     width / 2,
     citationY + 26
   );
@@ -3019,7 +3019,7 @@ async function generateCertificateCanvas(record) {
 
   ctx.fillStyle = '#4a5b6c';
   ctx.font = '500 13px "Plus Jakarta Sans", Arial, sans-serif';
-  ctx.fillText('Ketua Makmal Kuarantin Agro · UPSI', sigCx, 785);
+  ctx.fillText('Ketua Makmal Agro · UPSI', sigCx, 785);
 
   return canvas;
 }
@@ -3042,7 +3042,7 @@ async function downloadVictoryCertificate(record) {
         .trim()
         .replace(/[^a-zA-Z0-9_-]+/g, '_')
         .replace(/^_+|_+$/g, '') || 'Penyiasat';
-    const fileName = `Sijil_Makmal_Agro_${safeName}.png`;
+    const fileName = `Sijil_Escape_Makmal_Agro_${safeName}.png`;
 
     const triggerLinkDownload = (href, revokeAfter) => {
       const link = document.createElement('a');
