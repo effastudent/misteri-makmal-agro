@@ -968,6 +968,224 @@ body.tension-phase-3 .tension-vignette {
   transform: translateY(-1px);
 }
 
+/* Animasi Cutscene Kegagalan 3-Slaid */
+@keyframes cutsceneShake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  14% {
+    transform: translate3d(-7px, 3px, 0) rotate(-0.45deg);
+  }
+  28% {
+    transform: translate3d(7px, -4px, 0) rotate(0.45deg);
+  }
+  42% {
+    transform: translate3d(-6px, -2px, 0) rotate(-0.35deg);
+  }
+  56% {
+    transform: translate3d(5px, 3px, 0) rotate(0.3deg);
+  }
+  72% {
+    transform: translate3d(-3px, 1px, 0) rotate(-0.15deg);
+  }
+  86% {
+    transform: translate3d(2px, -1px, 0);
+  }
+}
+
+.cutscene-frame.is-shaking {
+  animation: cutsceneShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes alarmGlowPulse {
+  0%,
+  100% {
+    opacity: 0.42;
+    filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.45));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 18px rgba(255, 77, 90, 0.95));
+  }
+}
+
+@keyframes alarmTimerFlash {
+  0%,
+  100% {
+    fill: #ff4d5a;
+    filter: drop-shadow(0 0 6px rgba(255, 77, 90, 0.55));
+  }
+  50% {
+    fill: #fecaca;
+    filter: drop-shadow(0 0 18px rgba(255, 77, 90, 1));
+  }
+}
+
+@keyframes vaporJetStream {
+  0% {
+    transform: translateY(-12px) scaleY(0.82);
+    opacity: 0.18;
+  }
+  45% {
+    transform: translateY(8px) scaleY(1.08);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(24px) scaleY(1.16);
+    opacity: 0.12;
+  }
+}
+
+@keyframes hissBurstPulse {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(0.96);
+    opacity: 0.72;
+  }
+  50% {
+    transform: translate(3px, 5px) scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes risingSterilizationMist {
+  0% {
+    transform: translate3d(-12px, 34px, 0) scale(0.96);
+    opacity: 0.18;
+  }
+  50% {
+    transform: translate3d(10px, -6px, 0) scale(1.04);
+    opacity: 0.62;
+  }
+  100% {
+    transform: translate3d(-6px, -36px, 0) scale(1.08);
+    opacity: 0.28;
+  }
+}
+
+@keyframes mistSwirlDrift {
+  0%,
+  100% {
+    transform: translate3d(-18px, 12px, 0);
+    opacity: 0.34;
+  }
+  50% {
+    transform: translate3d(18px, -16px, 0);
+    opacity: 0.7;
+  }
+}
+
+@keyframes visionBlurFade {
+  0% {
+    filter: blur(0px);
+    transform: scale(1);
+  }
+  100% {
+    filter: blur(5px);
+    transform: scale(1.035);
+  }
+}
+
+@keyframes vignetteCloseIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes portraitDroopFade {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(6px);
+    opacity: 0.48;
+  }
+}
+
+@keyframes faintDialogueWeak {
+  0% {
+    opacity: 1;
+    color: var(--text-primary);
+  }
+  100% {
+    opacity: 0.72;
+    color: #cbd5e1;
+  }
+}
+
+.anim-alarm-pulse {
+  animation: alarmGlowPulse 0.85s ease-in-out infinite;
+}
+
+.anim-alarm-timer {
+  animation: alarmTimerFlash 0.85s ease-in-out infinite;
+}
+
+.anim-vapor-jet {
+  transform-box: fill-box;
+  transform-origin: top center;
+  animation: vaporJetStream 1.15s ease-in-out infinite;
+}
+
+.anim-vapor-jet-delayed {
+  animation-delay: 0.45s;
+}
+
+.anim-hiss-burst {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hissBurstPulse 0.9s ease-in-out infinite;
+}
+
+.anim-mist-rise {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: risingSterilizationMist 3.2s ease-in-out infinite;
+}
+
+.anim-mist-rise-slow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: risingSterilizationMist 4.2s ease-in-out infinite reverse;
+}
+
+.anim-mist-swirl {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mistSwirlDrift 3.6s ease-in-out infinite;
+}
+
+.cutscene-visual.is-fainting-blur svg {
+  animation: visionBlurFade 3.2s ease-out forwards;
+}
+
+.cutscene-visual.is-fainting-blur::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(4, 7, 9, 0.06) 14%,
+    rgba(3, 6, 8, 0.72) 58%,
+    rgba(2, 4, 6, 0.96) 92%
+  );
+  animation: vignetteCloseIn 3s ease-out forwards;
+}
+
+.speaker-portrait.is-drooping svg {
+  animation: portraitDroopFade 2.6s ease-out forwards;
+}
+
+.cutscene-text.is-fainting {
+  animation: faintDialogueWeak 2.8s ease-out forwards;
+}
+
 /* ============================================================================
    3. ANTARA MUKA PERMAINAN UTAMA (HUD + KANVAS + DOK BAWAH)
    ============================================================================ */

@@ -40,7 +40,7 @@ const ROOMS = [
     name: 'Pintu Keluar & Panel Kawalan',
     requiresSecretUnlock: false,
     enterThought:
-      'Pintu keluli ini terkunci rapat dengan kunci kuarantin elektronik. Aku perlu sahkan semua protokol eksperimen untuk membukanya.',
+      'Pintu keluli Makmal Agro ini terkunci rapat dengan kunci elektronik. Aku perlu sahkan semua protokol eksperimen untuk membukanya.',
   },
   {
     id: 'view2',
@@ -69,10 +69,10 @@ const ROOMS = [
   {
     id: 'view5',
     code: 'BILIK 5',
-    name: 'Bilik Rahsia Kuarantin (Bio-Vault)',
+    name: 'Bilik Rahsia Makmal Agro',
     requiresSecretUnlock: true,
     enterThought:
-      'Ini dia Bilik Kebal Bio-Vault Profesor Razak! Kod pelepasan kuarantin pasti tersimpan di dalam peti keselamatan botani ini.',
+      'Ini dia Bilik Rahsia Makmal Agro (Bio-Vault Profesor Razak)! Kod pelepasan pintu keluar pasti tersimpan di dalam peti keselamatan botani ini.',
   },
 ];
 
@@ -1154,6 +1154,7 @@ const dom = {
   nameError: document.getElementById('name-error'),
 
   // Cutscene
+  cutsceneFrame: document.querySelector('.cutscene-frame'),
   cutsceneProgress: document.getElementById('cutscene-progress'),
   cutsceneVisual: document.getElementById('cutscene-visual'),
   cutscenePortrait: document.getElementById('cutscene-portrait'),
@@ -1264,16 +1265,25 @@ function normalizePortraitGender(gender) {
 
 function getPlayerPortraitSVG(gender, emotion = 'neutral') {
   const normalizedGender = normalizePortraitGender(gender);
-  const mood = emotion === 'happy' || emotion === 'crying' ? emotion : 'neutral';
+  const allowedMoods = ['neutral', 'happy', 'crying', 'shocked', 'coughing', 'dizzy'];
+  const mood = allowedMoods.includes(emotion) ? emotion : 'neutral';
 
   const bgFill =
-    mood === 'happy' ? '#133834' : mood === 'crying' ? '#24141b' : '#122933';
+    mood === 'happy'
+      ? '#133834'
+      : mood === 'crying' || mood === 'shocked' || mood === 'dizzy'
+        ? '#24141b'
+        : mood === 'coughing'
+          ? '#12262b'
+          : '#122933';
   const haloMarkup =
     mood === 'happy'
       ? '<circle cx="32" cy="27" r="22" fill="#f2b749" fill-opacity="0.22"/><circle cx="32" cy="27" r="18" fill="#6ee7b7" fill-opacity="0.16"/>'
-      : mood === 'crying'
-        ? '<circle cx="32" cy="28" r="22" fill="#dc3545" fill-opacity="0.16"/>'
-        : '';
+      : mood === 'crying' || mood === 'shocked' || mood === 'dizzy'
+        ? '<circle cx="32" cy="28" r="22" fill="#dc3545" fill-opacity="0.18"/>'
+        : mood === 'coughing'
+          ? '<circle cx="32" cy="28" r="22" fill="#5eead4" fill-opacity="0.16"/>'
+          : '';
 
   const isFemale = normalizedGender === 'female';
   const eyeLeftX = isFemale ? 27.5 : 27;
@@ -1304,8 +1314,51 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
       <ellipse cx="24" cy="31.5" rx="2.4" ry="1.3" fill="#e87a7a" fill-opacity="0.45"/>
       <ellipse cx="40" cy="31.5" rx="2.4" ry="1.3" fill="#e87a7a" fill-opacity="0.45"/>
     `;
-  } else if (mood === 'crying') {
+  } else if (mood === 'shocked') {
     browsAndEyes = `
+      <path d="M${eyeLeftX - 3} ${eyeY - 4.8} Q${eyeLeftX} ${eyeY - 6.6} ${eyeLeftX + 2.6} ${eyeY - 4.6}" fill="none" stroke="#05080a" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M${eyeRightX - 2.6} ${eyeY - 4.6} Q${eyeRightX} ${eyeY - 6.6} ${eyeRightX + 3} ${eyeY - 4.8}" fill="none" stroke="#05080a" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="${eyeLeftX}" cy="${eyeY}" r="3.1" fill="#ffffff" stroke="#05080a" stroke-width="1.5"/>
+      <circle cx="${eyeRightX}" cy="${eyeY}" r="3.1" fill="#ffffff" stroke="#05080a" stroke-width="1.5"/>
+      <circle cx="${eyeLeftX}" cy="${eyeY + 0.2}" r="1.25" fill="#05080a"/>
+      <circle cx="${eyeRightX}" cy="${eyeY + 0.2}" r="1.25" fill="#05080a"/>
+    `;
+    mouthMarkup = `
+      <ellipse cx="32" cy="35.3" rx="3.1" ry="3.4" fill="#6b1d28" stroke="#05080a" stroke-width="1.8"/>
+    `;
+    extrasMarkup = `
+      <path d="M41.2 21.5 C39.5 24.4 39.8 26.8 41.2 26.8 C42.6 26.8 42.9 24.4 41.2 21.5 Z" fill="#7dd3fc" stroke="#0369a1" stroke-width="0.9"/>
+    `;
+  } else if (mood === 'coughing') {
+    browsAndEyes = `
+      <path d="M${eyeLeftX - 3} ${eyeY - 3.6} L${eyeLeftX + 2} ${eyeY - 2.3}" fill="none" stroke="#05080a" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M${eyeRightX - 2} ${eyeY - 2.3} L${eyeRightX + 3} ${eyeY - 3.6}" fill="none" stroke="#05080a" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M${eyeLeftX - 2.6} ${eyeY - 1.2} L${eyeLeftX + 2} ${eyeY + 0.4} L${eyeLeftX - 2.6} ${eyeY + 2}" fill="none" stroke="#05080a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M${eyeRightX + 2.6} ${eyeY - 1.2} L${eyeRightX - 2} ${eyeY + 0.4} L${eyeRightX + 2.6} ${eyeY + 2}" fill="none" stroke="#05080a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    `;
+    mouthMarkup = `
+      <path d="M27.8 34.4 Q30 32.8 32 34.2 Q34 35.6 36.2 34.1" fill="none" stroke="#05080a" stroke-width="1.9" stroke-linecap="round"/>
+      <ellipse cx="32" cy="35.6" rx="2.1" ry="1.3" fill="#7f1d1d" stroke="#05080a" stroke-width="1.3"/>
+    `;
+    extrasMarkup = `
+      <ellipse cx="24.2" cy="31.5" rx="2.2" ry="1.2" fill="#e87a7a" fill-opacity="0.35"/>
+      <ellipse cx="39.8" cy="31.5" rx="2.2" ry="1.2" fill="#e87a7a" fill-opacity="0.35"/>
+      <path d="M40.5 22 C39 24.4 39.3 26.4 40.5 26.4 C41.7 26.4 42 24.4 40.5 22 Z" fill="#7dd3fc" stroke="#0369a1" stroke-width="0.8"/>
+      <circle cx="36.5" cy="36.5" r="2.2" fill="#99f6e4" fill-opacity="0.5"/>
+      <circle cx="39.8" cy="37.6" r="1.6" fill="#ccfbf1" fill-opacity="0.45"/>
+    `;
+  } else if (mood === 'crying' || mood === 'dizzy') {
+    browsAndEyes =
+      mood === 'dizzy'
+        ? `
+      <path d="M${eyeLeftX - 3} ${eyeY - 2.2} L${eyeLeftX + 2.2} ${eyeY - 4.2}" fill="none" stroke="#05080a" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M${eyeRightX - 2.2} ${eyeY - 4.2} L${eyeRightX + 3} ${eyeY - 2.2}" fill="none" stroke="#05080a" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M${eyeLeftX - 2.5} ${eyeY - 0.5} Q${eyeLeftX} ${eyeY + 2.1} ${eyeLeftX + 2.5} ${eyeY - 0.5}" fill="none" stroke="#05080a" stroke-width="1.9" stroke-linecap="round"/>
+      <path d="M${eyeRightX - 2.5} ${eyeY - 0.5} Q${eyeRightX} ${eyeY + 2.1} ${eyeRightX + 2.5} ${eyeY - 0.5}" fill="none" stroke="#05080a" stroke-width="1.9" stroke-linecap="round"/>
+      <circle cx="${eyeLeftX - 0.5}" cy="${eyeY + 0.5}" r="0.85" fill="#e0f2fe"/>
+      <circle cx="${eyeRightX - 0.5}" cy="${eyeY + 0.5}" r="0.85" fill="#e0f2fe"/>
+    `
+        : `
       <path d="M${eyeLeftX - 3} ${eyeY - 2.5} L${eyeLeftX + 2.2} ${eyeY - 4.4}" fill="none" stroke="#05080a" stroke-width="1.7" stroke-linecap="round"/>
       <path d="M${eyeRightX - 2.2} ${eyeY - 4.4} L${eyeRightX + 3} ${eyeY - 2.5}" fill="none" stroke="#05080a" stroke-width="1.7" stroke-linecap="round"/>
       <ellipse cx="${eyeLeftX}" cy="${eyeY + 0.3}" rx="2.1" ry="2.3" fill="#05080a"/>
@@ -1323,6 +1376,11 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
       <g class="portrait-tear portrait-tear-delayed">
         <path d="M${eyeRightX + 0.8} ${eyeY + 2.8} C${eyeRightX - 1.5} ${eyeY + 6.4} ${eyeRightX - 1.4} ${eyeY + 9.2} ${eyeRightX + 0.4} ${eyeY + 9.2} C${eyeRightX + 2.2} ${eyeY + 9.2} ${eyeRightX + 2.6} ${eyeY + 6.4} ${eyeRightX + 0.8} ${eyeY + 2.8} Z" fill="#7dd3fc" stroke="#0369a1" stroke-width="0.9"/>
       </g>
+      ${
+        mood === 'dizzy'
+          ? '<path d="M39.5 18.8 C41.2 17.5 43.2 19 42 20.6 C40.9 22 39 20.8 40 19.6" fill="none" stroke="#fde68a" stroke-width="1.2" stroke-linecap="round" opacity="0.85"/>'
+          : ''
+      }
     `;
   }
 
@@ -1432,7 +1490,7 @@ function getCutscenePanelSVG(visualId) {
           <rect x="70" y="36" width="470" height="474" fill="#101f27" stroke="#040709" stroke-width="5"/>
           <rect x="98" y="64" width="414" height="446" fill="#142833" stroke="#040709" stroke-width="3.5"/>
           <rect x="172" y="102" width="266" height="122" rx="6" fill="#0d1c24" stroke="#040709" stroke-width="3.5"/>
-          <text x="305" y="156" text-anchor="middle" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">MAKMAL KUARANTIN</text>
+          <text x="305" y="156" text-anchor="middle" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">MAKMAL AGRO</text>
           <text x="305" y="186" text-anchor="middle" fill="#cbd5e1" font-family="JetBrains Mono, monospace" font-size="14">BLOK SAINS · UPSI</text>
 
           <!-- Pengimbas Kad Elektronik di Dinding Kanan -->
@@ -1590,9 +1648,9 @@ function getCutscenePanelSVG(visualId) {
           <polygon points="480,104 548,220 412,220" fill="#dc2626" stroke="#040709" stroke-width="4"/>
           <rect x="474" y="140" width="12" height="44" rx="2" fill="#05080a"/>
           <circle cx="480" cy="200" r="7" fill="#05080a"/>
-          <text x="480" y="264" text-anchor="middle" fill="#ff7b89" font-family="JetBrains Mono, monospace" font-size="24" font-weight="700">KUARANTIN AKTIF</text>
+          <text x="480" y="264" text-anchor="middle" fill="#ff7b89" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700">BAHAYA: GAS BERACUN</text>
           <text x="480" y="318" text-anchor="middle" fill="#f2b749" font-family="JetBrains Mono, monospace" font-size="44" font-weight="700">10:00</text>
-          <text x="480" y="348" text-anchor="middle" fill="#9bb3bd" font-family="Plus Jakarta Sans, sans-serif" font-size="14">PROTOKOL UJI KAJI DIPERLUKAN</text>
+          <text x="480" y="348" text-anchor="middle" fill="#9bb3bd" font-family="Plus Jakarta Sans, sans-serif" font-size="14">PINTU MAKMAL AGRO DIKUNCI</text>
         </svg>
       `;
 
@@ -1702,7 +1760,7 @@ function getCutscenePanelSVG(visualId) {
           <circle cx="480" cy="162" r="54" fill="#10b981" stroke="#040709" stroke-width="4"/>
           <path d="M454 162 L472 180 L508 142" fill="none" stroke="#040709" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
           <text x="480" y="256" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="24" font-weight="700">EC: 1.8 mS/cm · STABIL</text>
-          <text x="480" y="298" text-anchor="middle" fill="#fef08a" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700">KUARANTIN DIBATALKAN</text>
+          <text x="480" y="298" text-anchor="middle" fill="#fef08a" font-family="JetBrains Mono, monospace" font-size="21" font-weight="700">GAS BERACUN DIBATALKAN</text>
           <text x="480" y="336" text-anchor="middle" fill="#9bb3bd" font-family="Plus Jakarta Sans, sans-serif" font-size="14">PROTOKOL SAINS PERTANIAN SEMESTER 1 DISAHKAN</text>
         </svg>
       `;
@@ -1736,26 +1794,46 @@ function getCutscenePanelSVG(visualId) {
         <svg viewBox="0 0 960 510" preserveAspectRatio="xMidYMid slice">
           <defs>
             <radialGradient id="goAlarmGlow" cx="50%" cy="22%" r="60%">
-              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.78"/>
-              <stop offset="52%" stop-color="#991b1b" stop-opacity="0.28"/>
+              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.82"/>
+              <stop offset="52%" stop-color="#991b1b" stop-opacity="0.32"/>
               <stop offset="100%" stop-color="#05080a" stop-opacity="0"/>
             </radialGradient>
+            <linearGradient id="ventJetGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ccfbf1" stop-opacity="0.72"/>
+              <stop offset="65%" stop-color="#5eead4" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#5eead4" stop-opacity="0"/>
+            </linearGradient>
           </defs>
           <rect width="960" height="510" fill="#090b0e"/>
-          <rect width="960" height="510" fill="url(#goAlarmGlow)"/>
-          <!-- Corong Injap Pengudaraan Siling Terbuka -->
+          <rect class="anim-alarm-pulse" width="960" height="510" fill="url(#goAlarmGlow)"/>
+          <!-- Corong Injap Pengudaraan Siling Terbuka + Pancutan Gas Beranimasi -->
           <rect x="260" y="18" width="440" height="56" rx="4" fill="#18242b" stroke="#040709" stroke-width="5"/>
           <line x1="290" y1="36" x2="670" y2="36" stroke="#05080a" stroke-width="4"/>
           <line x1="290" y1="54" x2="670" y2="54" stroke="#05080a" stroke-width="4"/>
+          <g class="anim-vapor-jet">
+            <path d="M295 74 L225 225 L365 225 L345 74 Z" fill="url(#ventJetGrad)"/>
+            <path d="M615 74 L595 225 L735 225 L665 74 Z" fill="url(#ventJetGrad)"/>
+          </g>
+          <g class="anim-vapor-jet anim-vapor-jet-delayed">
+            <path d="M350 74 L315 190 L415 190 L405 74 Z" fill="url(#ventJetGrad)"/>
+            <path d="M555 74 L545 190 L645 190 L610 74 Z" fill="url(#ventJetGrad)"/>
+          </g>
           <!-- Lampu Penggera Merah Berkelip -->
-          <rect x="444" y="88" width="72" height="44" rx="10" fill="#dc2626" stroke="#040709" stroke-width="4"/>
-          <path d="M398 108 L330 88 M562 108 L630 88 M410 132 L352 162 M550 132 L608 162" stroke="#fca5a5" stroke-width="4" stroke-linecap="round"/>
+          <g class="anim-alarm-pulse">
+            <rect x="444" y="88" width="72" height="44" rx="10" fill="#dc2626" stroke="#040709" stroke-width="4"/>
+            <path d="M398 108 L330 88 M562 108 L630 88 M410 132 L352 162 M550 132 L608 162" stroke="#fca5a5" stroke-width="4" stroke-linecap="round"/>
+          </g>
           <!-- Paparan Pemasa 00:00 -->
           <rect x="265" y="185" width="430" height="190" rx="12" fill="#141e24" stroke="#040709" stroke-width="6"/>
           <rect x="292" y="210" width="376" height="140" rx="6" fill="#23080d" stroke="#040709" stroke-width="4"/>
-          <text x="480" y="252" text-anchor="middle" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">MASA KUARANTIN TAMAT</text>
-          <text x="480" y="318" text-anchor="middle" fill="#ff4d5a" font-family="JetBrains Mono, monospace" font-size="64" font-weight="700">00:00</text>
-          <text x="150" y="215" fill="#ff7b89" font-family="Fraunces, serif" font-size="36" font-weight="700" stroke="#040709" stroke-width="2" transform="rotate(-11 150 215)">HSSSSS!!</text>
+          <text x="480" y="252" text-anchor="middle" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">BAHAYA: GAS BERACUN DILEPASKAN</text>
+          <text class="anim-alarm-timer" x="480" y="318" text-anchor="middle" fill="#ff4d5a" font-family="JetBrains Mono, monospace" font-size="64" font-weight="700">00:00</text>
+          <g class="anim-hiss-burst">
+            <text x="128" y="198" fill="#99f6e4" font-family="Fraunces, serif" font-size="36" font-weight="700" stroke="#040709" stroke-width="2" transform="rotate(-12 128 198)">HSSSSS!!</text>
+          </g>
+          <g class="anim-hiss-burst" style="animation-delay: 0.35s;">
+            <text x="692" y="182" fill="#ff7b89" font-family="Fraunces, serif" font-size="30" font-weight="700" stroke="#040709" stroke-width="2" transform="rotate(10 692 182)">HSSSSS!!</text>
+          </g>
         </svg>
       `;
 
@@ -1771,17 +1849,34 @@ function getCutscenePanelSVG(visualId) {
           </defs>
           <rect width="960" height="510" fill="#071014"/>
           <!-- Pintu Keluar & Meja Makmal Tenggelam Dalam Kabus -->
-          <rect x="340" y="120" width="280" height="310" fill="#122128" stroke="#040709" stroke-width="5"/>
-          <rect x="370" y="240" width="220" height="44" rx="4" fill="#7f1d1d" stroke="#040709" stroke-width="4"/>
-          <text x="480" y="268" text-anchor="middle" fill="#fecaca" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">DIKUNCI SEPENUHNYA</text>
+          <rect x="340" y="108" width="280" height="322" fill="#122128" stroke="#040709" stroke-width="5"/>
+          <rect x="370" y="216" width="220" height="44" rx="4" fill="#7f1d1d" stroke="#040709" stroke-width="4"/>
+          <text x="480" y="244" text-anchor="middle" fill="#fecaca" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">DIKUNCI SEPENUHNYA</text>
+          <!-- Siluet Pelajar Terperangkap Sambil Batuk di Hadapan Pintu -->
+          <g opacity="0.86">
+            <path d="M398 510 C408 362 436 312 480 312 C524 312 552 362 562 510 Z" fill="#081217" stroke="#020507" stroke-width="4"/>
+            <circle cx="480" cy="264" r="35" fill="#081217" stroke="#020507" stroke-width="4"/>
+            <path d="M442 356 Q468 326 488 302" fill="none" stroke="#081217" stroke-width="18" stroke-linecap="round"/>
+          </g>
           <!-- Corong Siling & Kepulan Gas Pensterilan Putih-Teal -->
           <rect x="190" y="22" width="140" height="36" rx="4" fill="#1e313a" stroke="#040709" stroke-width="4"/>
           <rect x="630" y="22" width="140" height="36" rx="4" fill="#1e313a" stroke="#040709" stroke-width="4"/>
           <path d="M230 58 C185 170 95 250 85 385 L430 385 C390 250 320 155 290 58 Z" fill="url(#gasMistGrad)"/>
           <path d="M670 58 C640 165 565 250 530 385 L885 385 C865 245 785 160 730 58 Z" fill="url(#gasMistGrad)"/>
-          <ellipse cx="220" cy="400" rx="220" ry="72" fill="#ccfbf1" opacity="0.26"/>
-          <ellipse cx="500" cy="425" rx="280" ry="82" fill="#99f6e4" opacity="0.22"/>
-          <ellipse cx="775" cy="405" rx="210" ry="70" fill="#ccfbf1" opacity="0.25"/>
+          <!-- Kabus Pensterilan Lut Sinar Meningkat Merentasi Siluet -->
+          <g class="anim-mist-rise">
+            <ellipse cx="245" cy="405" rx="230" ry="78" fill="#ccfbf1" opacity="0.32"/>
+            <ellipse cx="500" cy="368" rx="280" ry="86" fill="#99f6e4" opacity="0.30"/>
+            <ellipse cx="755" cy="408" rx="220" ry="74" fill="#ccfbf1" opacity="0.31"/>
+          </g>
+          <g class="anim-mist-rise-slow">
+            <ellipse cx="480" cy="430" rx="340" ry="92" fill="#5eead4" opacity="0.24"/>
+            <ellipse cx="360" cy="328" rx="210" ry="64" fill="#ccfbf1" opacity="0.20"/>
+          </g>
+          <g class="anim-mist-swirl">
+            <ellipse cx="600" cy="316" rx="220" ry="68" fill="#99f6e4" opacity="0.22"/>
+            <ellipse cx="475" cy="260" rx="240" ry="54" fill="#ccfbf1" opacity="0.16"/>
+          </g>
         </svg>
       `;
 
@@ -1806,7 +1901,7 @@ function getCutscenePanelSVG(visualId) {
           <ellipse cx="320" cy="390" rx="260" ry="92" fill="#5eead4" opacity="0.12"/>
           <ellipse cx="640" cy="410" rx="270" ry="96" fill="#99f6e4" opacity="0.1"/>
           <ellipse cx="480" cy="465" rx="420" ry="85" fill="#050a0d" opacity="0.85"/>
-          <text x="480" y="96" text-anchor="middle" fill="#ff7b89" font-family="Fraunces, serif" font-size="30" font-weight="700">KUARANTIN MAKMAL BERKUAT KUASA</text>
+          <text x="480" y="96" text-anchor="middle" fill="#ff7b89" font-family="Fraunces, serif" font-size="28" font-weight="700">GAS BERACUN MAKMAL AGRO DILEPASKAN</text>
         </svg>
       `;
 
@@ -1884,14 +1979,14 @@ function buildIntroCutscene(playerName) {
         soundManager.playDoorSlamLock();
         soundManager.playBGM('tense');
       },
-      text: 'KLANG!! Bunyi apa tu?! Pintu utama... terkunci rapat?! Kenapa penggera kecemasan tiba-tiba menyala?',
+      text: 'KLANG!! Bunyi apa tu?! Pintu utama Makmal Agro... terkunci rapat?! Kenapa penggera kecemasan tiba-tiba menyala?',
     },
     {
       visualId: 'warning_monitor',
       speaker: 'SISTEM PROF. RAZAK',
       speakerType: 'system',
       sfx: 'alarm',
-      text: 'AMARAN KUARANTIN AKTIF! Seseorang dikesan dalam makmal. Gas pensterilan akan dilepaskan dalam 10 MINIT kecuali protokol eksperimen disahkan!',
+      text: 'AMARAN KECEMASAN! Pintu Makmal Agro telah dikunci secara automatik. Gas beracun untuk pensterilan akan dilepaskan sebaik sahaja pemasa tamat (00:00) kecuali semua protokol eksperimen disahkan!',
     },
     {
       visualId: 'lab_instruments',
@@ -1900,7 +1995,7 @@ function buildIntroCutscene(playerName) {
       emotion: 'neutral',
       sfx: 'click',
       nextLabel: 'Masuk Makmal ▸',
-      text: 'Alamak! Satu-satunya jalan keluar ialah selesaikan semua uji kaji dalam makmal ni. Nasib baik aku ingat nota kuliah Sains Pertanian... Masa berjalan, jom siasat!',
+      text: 'Alamak! Satu-satunya jalan keluar dari Makmal Agro ni ialah selesaikan semua uji kaji. Nasib baik aku ingat nota kuliah Sains Pertanian... Masa berjalan, jom siasat!',
     },
   ];
 }
@@ -1923,7 +2018,7 @@ function buildVictoryCutscene(playerName) {
       speaker: 'SISTEM PROF. RAZAK',
       speakerType: 'system',
       sfx: 'pickup',
-      text: 'PENENTUKURAN EC 1.8 mS/cm DISAHKAN. Sistem kuarantin dibatalkan dan pelepasan gas pensterilan diberhentikan.',
+      text: 'PENENTUKURAN EC 1.8 mS/cm DISAHKAN. Sistem penguncian Makmal Agro dibatalkan dan pelepasan gas beracun diberhentikan.',
     },
     {
       visualId: 'victory_escape',
@@ -1943,25 +2038,39 @@ function buildGameOverCutscene(playerName) {
       visualId: 'gameover_alarm',
       speaker: playerName,
       speakerType: 'player',
-      emotion: 'neutral',
-      sfx: 'alarm',
-      text: 'TIDAK!! Masa dah tamat! Bunyi injap pengudaraan atas siling mula terbuka...',
+      emotion: 'shocked',
+      frameShake: true,
+      typeSpeed: 25,
+      onEnterSound: () => {
+        playSFX('alarm');
+        soundManager.playGasHiss();
+      },
+      text: 'TIDAK!! Masa dah tamat! Injap gas beracun atas siling Makmal Agro mula terbuka...',
     },
     {
       visualId: 'gameover_gas',
       speaker: 'SISTEM PROF. RAZAK',
       speakerType: 'system',
+      portraitType: 'player',
+      emotion: 'coughing',
+      typeSpeed: 25,
       onEnterSound: () => soundManager.playGasHiss(),
-      text: 'AMARAN KRITIKAL: GAS PENSTERILAN DILEPASKAN. SEMUA PINTU KELUAR DIKUNCI SEPENUHNYA.',
+      text: 'AMARAN KRITIKAL: GAS BERACUN DILEPASKAN. SEMUA PINTU KELUAR MAKMAL AGRO DIKUNCI SEPENUHNYA.',
     },
     {
       visualId: 'gameover_silhouette',
       speaker: playerName,
       speakerType: 'player',
-      emotion: 'crying',
+      emotion: 'dizzy',
+      visualBlur: true,
+      portraitDroop: true,
+      textFaint: true,
+      typeSpeed: 65,
+      dotPauseMs: 320,
+      instantButtonAdvance: true,
       onEnterSound: () => soundManager.playLoseSound(),
       nextLabel: 'Lihat Keputusan ▸',
-      text: 'Pandangan aku mula kabur... Aku gagal selesaikan protokol Sains Pertanian tepat pada masanya...',
+      text: 'Pandangan aku mula kabur...',
     },
   ];
 }
@@ -1995,6 +2104,21 @@ function triggerCutscene(panelsArray, callback) {
   renderCutscenePanel();
 }
 
+function resetCutsceneEffectClasses() {
+  if (dom.cutsceneFrame) {
+    dom.cutsceneFrame.classList.remove('is-shaking');
+  }
+  if (dom.cutsceneVisual) {
+    dom.cutsceneVisual.classList.remove('is-fainting-blur');
+  }
+  if (dom.cutscenePortrait) {
+    dom.cutscenePortrait.classList.remove('is-drooping');
+  }
+  if (dom.cutsceneText) {
+    dom.cutsceneText.classList.remove('is-fainting');
+  }
+}
+
 function renderCutscenePanel() {
   const panel = activeCutscene.panels[activeCutscene.index];
   if (!panel) {
@@ -2015,16 +2139,37 @@ function renderCutscenePanel() {
     })
     .join('');
 
+  // Tetapkan semula kelas kesan visual sebelum merender slaid semasa
+  resetCutsceneEffectClasses();
+
   // Ilustrasi & potret
   dom.cutsceneVisual.innerHTML = panel.customSvg || getCutscenePanelSVG(panel.visualId);
   const isSystem = panel.speakerType === 'system';
+  const portraitType = panel.portraitType || (isSystem ? 'system' : 'player');
   dom.cutscenePortrait.innerHTML = getPortraitSVG(
-    isSystem ? 'system' : 'player',
+    portraitType,
     gameState.avatar,
     panel.emotion || 'neutral'
   );
   dom.cutsceneSpeaker.textContent = panel.speaker;
   dom.cutsceneSpeaker.classList.toggle('is-system', isSystem);
+
+  if (panel.frameShake && dom.cutsceneFrame) {
+    void dom.cutsceneFrame.offsetWidth;
+    dom.cutsceneFrame.classList.add('is-shaking');
+  }
+  if (panel.visualBlur && dom.cutsceneVisual) {
+    void dom.cutsceneVisual.offsetWidth;
+    dom.cutsceneVisual.classList.add('is-fainting-blur');
+  }
+  if (panel.portraitDroop && dom.cutscenePortrait) {
+    void dom.cutscenePortrait.offsetWidth;
+    dom.cutscenePortrait.classList.add('is-drooping');
+  }
+  if (panel.textFaint && dom.cutsceneText) {
+    void dom.cutsceneText.offsetWidth;
+    dom.cutsceneText.classList.add('is-fainting');
+  }
 
   if (typeof panel.onEnterSound === 'function') {
     panel.onEnterSound();
@@ -2043,24 +2188,40 @@ function renderCutscenePanel() {
     ? panel.nextLabel || 'Teruskan ▸'
     : 'Seterusnya ▸';
 
-  typeNextChar(panel.text);
+  typeNextChar(panel.text, panel);
 }
 
-function typeNextChar(fullText) {
+function typeNextChar(fullText, panel = null) {
   if (!activeCutscene.isTyping) return;
   if (activeCutscene.charIndex < fullText.length) {
     activeCutscene.charIndex += 1;
+    const currentChar = fullText.charAt(activeCutscene.charIndex - 1);
     dom.cutsceneText.textContent = fullText.slice(0, activeCutscene.charIndex);
-    if (activeCutscene.charIndex % 3 === 0) {
+
+    const isFaintingText = Boolean(panel && panel.textFaint);
+    if (isFaintingText) {
+      if (currentChar !== '.' && activeCutscene.charIndex % 4 === 0) {
+        playSFX('type');
+      }
+    } else if (activeCutscene.charIndex % 3 === 0) {
       playSFX('type');
     }
-    activeCutscene.typingTimer = setTimeout(() => typeNextChar(fullText), 22);
+
+    const baseDelay = Number(panel && panel.typeSpeed) > 0 ? Number(panel.typeSpeed) : 22;
+    const dotDelay = Number(panel && panel.dotPauseMs) > 0 ? Number(panel.dotPauseMs) : baseDelay;
+    const nextChar = fullText.charAt(activeCutscene.charIndex);
+    const charDelay =
+      currentChar === '.' || (panel && panel.dotPauseMs && nextChar === '.' && activeCutscene.charIndex >= fullText.length - 3)
+        ? dotDelay
+        : baseDelay;
+
+    activeCutscene.typingTimer = setTimeout(() => typeNextChar(fullText, panel), charDelay);
   } else {
     activeCutscene.isTyping = false;
   }
 }
 
-function advanceCutscene() {
+function advanceCutscene(fromNextButton = false) {
   const panel = activeCutscene.panels[activeCutscene.index];
   if (!panel) {
     finishCutscene();
@@ -2068,12 +2229,15 @@ function advanceCutscene() {
   }
 
   // Jika masih menaip, lengkapkan ayat terus pada klik pertama
+  // (Kecuali jika butang utama ditekan pada slaid terakhir yang membenarkan terus mara)
   if (activeCutscene.isTyping) {
     clearTimeout(activeCutscene.typingTimer);
     activeCutscene.isTyping = false;
     dom.cutsceneText.textContent = panel.text;
-    playSFX('click');
-    return;
+    if (!(fromNextButton && panel.instantButtonAdvance)) {
+      playSFX('click');
+      return;
+    }
   }
 
   playSFX('click');
@@ -2088,6 +2252,7 @@ function advanceCutscene() {
 function finishCutscene() {
   clearTimeout(activeCutscene.typingTimer);
   activeCutscene.isTyping = false;
+  resetCutsceneEffectClasses();
   dom.cutsceneScreen.hidden = true;
   dom.cutsceneScreen.classList.remove('active');
 
@@ -2133,7 +2298,7 @@ function updateTimerAndTensionUI() {
       playSFX('alarm');
       showDialogue(
         gameState.playerName,
-        'TINGGAL 2 MINIT SAHAJA! Penggera pensterilan dah hampir ke tahap kritikal—aku kena cepat!',
+        'TINGGAL 2 MINIT SAHAJA! Penggera gas beracun dah hampir ke tahap kritikal—aku kena cepat!',
         'warning'
       );
     }
@@ -2211,8 +2376,8 @@ function addTimeBonus(seconds = 60, reason = '') {
   soundManager.playTimeBonus();
   const suffix = reason ? ` (${TOPIC_LABELS[reason] || reason})` : '';
   showDialogue(
-    'SISTEM KUARANTIN',
-    `Protokol disahkan! Sistem pelepasan gas ditangguhkan selama ${bonus} saat!${suffix}`,
+    'SISTEM MAKMAL AGRO',
+    `Protokol disahkan! Pelepasan gas beracun ditangguhkan selama ${bonus} saat!${suffix}`,
     'bonus'
   );
 }
@@ -2243,7 +2408,7 @@ function applyTimePenalty(seconds = 30, puzzleId = 'general', customWarning = ''
 
   const message =
     customWarning ||
-    `Aduh! Jawapan tak tepat (${TOPIC_LABELS[puzzleId] || 'Uji Kaji'}) — sistem menolak ${penalty} saat daripada masa kuarantin!`;
+    `Aduh! Jawapan tak tepat (${TOPIC_LABELS[puzzleId] || 'Uji Kaji'}) — sistem menolak ${penalty} saat sebelum gas beracun dilepaskan!`;
 
   showDialogue(gameState.playerName, message, 'warning');
 
@@ -2938,11 +3103,11 @@ function showEndScreen(status, record) {
     dom.endEmblem.innerHTML = `<div class="end-portrait-badge" aria-hidden="true">${getPlayerPortraitSVG(avatarType, 'crying')}</div>`;
   }
   dom.endTitle.textContent = isVictory
-    ? 'BERJAYA MELARIKAN DIRI — KUARANTIN DIBATALKAN!'
-    : 'MISI GAGAL — TERPERANGKAP DI MAKMAL';
+    ? 'BERJAYA MELARIKAN DIRI — GAS BERACUN DIBATALKAN!'
+    : 'MISI GAGAL — TERPERANGKAP DI MAKMAL AGRO';
   dom.endSubtitle.textContent = isVictory
-    ? 'Tahniah! Semua protokol Sains Pertanian Semester 1 berjaya disahkan dan pintu utama telah dibuka.'
-    : 'Gas pensterilan telah dilepaskan dan sistem kuarantin mengunci makmal sepenuhnya sebelum semua protokol diselesaikan.';
+    ? 'Tahniah! Semua protokol Sains Pertanian Semester 1 berjaya disahkan dan pintu utama Makmal Agro telah dibuka.'
+    : 'Gas beracun telah dilepaskan dan semua pintu Makmal Agro dikunci sepenuhnya sebelum protokol eksperimen berjaya diselesaikan.';
 
   if (isVictory) {
     renderVictoryCertificatePreview(record);
@@ -3002,7 +3167,7 @@ function navigateToRoom(viewId, silent = false) {
   if (targetRoom.requiresSecretUnlock && !gameState.secretRoomUnlocked) {
     showDialogue(
       gameState.playerName,
-      'Bilik Rahsia Kuarantin masih terkunci. Aku perlu buka laluan itu dahulu.',
+      'Bilik Rahsia Makmal Agro masih terkunci. Aku perlu buka laluan itu dahulu.',
       'warning'
     );
     return;
@@ -3217,8 +3382,8 @@ function renderRoomSVG(viewId) {
           `
           }
 
-          <!-- Hotspot 4: Panel Kawalan Kuarantin (Kanan Pintu) -->
-          <g class="hotspot" data-hotspot="v1_control_panel" tabindex="0" role="button" aria-label="Periksa Panel Kawalan Kuarantin">
+          <!-- Hotspot 4: Panel Kawalan Makmal Agro (Kanan Pintu) -->
+          <g class="hotspot" data-hotspot="v1_control_panel" tabindex="0" role="button" aria-label="Periksa Panel Kawalan Makmal Agro">
             <rect class="hotspot-outline" x="728" y="210" width="124" height="170" rx="8" fill="#1d3540" stroke="#040709" stroke-width="4.5"/>
             <rect x="744" y="228" width="92" height="58" rx="3" fill="#0a161b" stroke="#040709" stroke-width="2.5"/>
             <text x="790" y="253" text-anchor="middle" fill="#7ee0eb" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">EC PINTU</text>
@@ -3337,7 +3502,7 @@ function renderRoomSVG(viewId) {
           ${
             secretOpen
               ? `
-          <g class="hotspot" data-hotspot="v2_secret_doorway" tabindex="0" role="button" aria-label="Masuk ke Bilik Rahsia Kuarantin (Bilik 5)">
+          <g class="hotspot" data-hotspot="v2_secret_doorway" tabindex="0" role="button" aria-label="Masuk ke Bilik Rahsia Makmal Agro (Bilik 5)">
             <!-- Pintu Laluan Rahsia Bercahaya Zamrud/Teal -->
             <rect class="hotspot-outline" x="772" y="92" width="218" height="423" rx="4" fill="#082420" stroke="#2ea877" stroke-width="4.5"/>
             <rect x="790" y="110" width="182" height="405" fill="#061918" stroke="#040709" stroke-width="3"/>
@@ -3922,7 +4087,7 @@ function renderRoomSVG(viewId) {
     default: {
       const vaultOpen = gameState.puzzles.bioVault;
       return `
-        <svg viewBox="0 0 1120 630" class="room-svg" aria-label="Bilik 5: Bilik Rahsia Kuarantin Bio-Vault">
+        <svg viewBox="0 0 1120 630" class="room-svg" aria-label="Bilik 5: Bilik Rahsia Makmal Agro (Bio-Vault)">
           <defs>
             <radialGradient id="vaultCore" cx="50%" cy="42%" r="58%">
               <stop offset="0%" stop-color="#2ea877" stop-opacity="0.34"/>
@@ -4887,7 +5052,7 @@ function openSoilTriangleModal() {
               speakerType: 'player',
               sfx: 'pickup',
               nextLabel: 'Teruskan ▸',
-              text: 'Ini... Bilik Rahsia Kuarantin Profesor Razak! Mungkin kod akhir pintu keluar ada di dalam peti kebal tu.',
+              text: 'Ini... Bilik Rahsia Makmal Agro Profesor Razak! Mungkin kod akhir pintu keluar ada di dalam peti kebal tu.',
             },
           ];
 
@@ -4897,7 +5062,7 @@ function openSoilTriangleModal() {
             refreshCurrentRoomScene();
             showDialogue(
               gameState.playerName,
-              'Protokol Tekstur Tanah (Tanah Lom) disahkan (+60 SAAT)! Laluan ke Bilik 5 (Bilik Rahsia Kuarantin) kini terbuka!'
+              'Protokol Tekstur Tanah (Tanah Lom) disahkan (+60 SAAT)! Laluan ke Bilik 5 (Bilik Rahsia Makmal Agro) kini terbuka!'
             );
           });
         } else {
@@ -5500,7 +5665,7 @@ function openEcCalibrationModal() {
         <div class="inspect-clue-box" style="margin-bottom:0;">
           ${
             solved
-              ? '<strong>Kuarantin Dinyahaktifkan!</strong> Bacaan <strong>1.8 mS/cm</strong> disahkan stabil.'
+              ? '<strong>Sistem Penguncian Dinyahaktifkan!</strong> Bacaan <strong>1.8 mS/cm</strong> disahkan stabil.'
               : 'Petunjuk: Semak <strong>Nota Lekat Prof. Razak</strong> dalam inventori anda untuk nilai sasaran EC yang tepat bagi nyahaktifkan kunci magnetik.'
           }
         </div>
@@ -5631,7 +5796,7 @@ function handleHotspotClick(hotspotId) {
         id: 'baja_n',
         name: 'Baja Cecair Nitrogen (N)',
         icon: '🧪',
-        description: 'Baja cecair berkepekatan tinggi unsur Nitrogen (N) untuk merawat klorosis daun tua.',
+        description: '',
       })
     ) {
       gameState.flags.pickedBajaN = true;
@@ -5649,7 +5814,7 @@ function handleHotspotClick(hotspotId) {
         id: 'baja_p',
         name: 'Baja Cecair Fosforus (P)',
         icon: '🧪',
-        description: 'Baja cecair unsur Fosforus (P) untuk pembentukan akar dan merawat daun ungu antosianin.',
+        description: '',
       })
     ) {
       gameState.flags.pickedBajaP = true;
@@ -5667,7 +5832,7 @@ function handleHotspotClick(hotspotId) {
         id: 'baja_k',
         name: 'Baja Cecair Kalium (K)',
         icon: '🧪',
-        description: 'Baja cecair unsur Kalium (K) untuk ketahanan tisu dan merawat nekrosis tepi daun.',
+        description: '',
       })
     ) {
       gameState.flags.pickedBajaK = true;
@@ -5906,7 +6071,7 @@ function handleHotspotClick(hotspotId) {
     } else {
       showDialogue(
         gameState.playerName,
-        'Panel kawalan kuarantin ni gelap tanpa kuasa. Aku perlu buka Kotak Fius di sebelah kiri dan pasang Fius Utama 30A dahulu.'
+        'Panel kawalan Makmal Agro ni gelap tanpa kuasa. Aku perlu buka Kotak Fius di sebelah kiri dan pasang Fius Utama 30A dahulu.'
       );
       openInspectModal(
         'Panel Kawalan EC Pintu Utama',
@@ -5965,7 +6130,7 @@ function handleHotspotClick(hotspotId) {
         name: 'Nota Lekat Prof. Razak',
         icon: '📝',
         description:
-          'Peringatan kecemasan: Tetapkan pengawal EC pintu keluar tepat pada bacaan 1.8 mS/cm untuk nyahaktifkan kuarantin!',
+          'Peringatan kecemasan: Tetapkan pengawal EC pintu keluar tepat pada bacaan 1.8 mS/cm untuk batalkan pelepasan gas beracun!',
       })
     ) {
       gameState.flags.pickedEcNote = true;
@@ -6119,7 +6284,7 @@ function openClueNoteModal(itemId) {
     dom.inspectTitle.textContent = 'Nota Lekat Prof. Razak';
     dom.inspectBody.innerHTML = `
       <div class="clue-note-sheet is-sticky">
-        <div class="clue-note-kicker">PERINGATAN KECEMASAN KUARANTIN</div>
+        <div class="clue-note-kicker">PERINGATAN KECEMASAN MAKMAL AGRO</div>
         <h3 class="clue-note-heading">Tetapan Pengawal EC Pintu Utama</h3>
         <div class="clue-note-data">Bacaan Sasaran: 1.8 mS/cm</div>
         <p class="clue-note-desc">
@@ -6152,11 +6317,12 @@ function removeItemFromInventory(itemId) {
 
 function selectInventoryItem(itemId) {
   const item = gameState.inventory.find((i) => i.id === itemId);
+  const itemDialogue = item ? (item.description ? `${item.name}: ${item.description}` : item.name) : '';
   if (itemId === 'nota_tanah' || itemId === 'nota_ec') {
     playSFX('page');
     setSelectedInventoryItem(itemId);
     if (item) {
-      showDialogue(gameState.playerName, `${item.name}: ${item.description}`, 'normal');
+      showDialogue(gameState.playerName, itemDialogue, 'normal');
     }
     renderInventory();
     openClueNoteModal(itemId);
@@ -6168,7 +6334,7 @@ function selectInventoryItem(itemId) {
   } else {
     setSelectedInventoryItem(itemId);
     if (item) {
-      showDialogue(gameState.playerName, `${item.name}: ${item.description}`, 'normal');
+      showDialogue(gameState.playerName, itemDialogue, 'normal');
     }
   }
   playSFX('click');
@@ -7005,7 +7171,7 @@ function initEventListeners() {
     }
   });
 
-  dom.btnNextCutscene.addEventListener('click', advanceCutscene);
+  dom.btnNextCutscene.addEventListener('click', () => advanceCutscene(true));
   dom.btnSkipCutscene.addEventListener('click', () => {
     playSFX('click');
     finishCutscene();
