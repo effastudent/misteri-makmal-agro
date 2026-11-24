@@ -1176,6 +1176,9 @@ const dom = {
   soundToggleButtons: document.querySelectorAll('.js-sound-toggle'),
   btnOpenNotebook: document.getElementById('btn-open-notebook'),
 
+  hudBar: document.querySelector('.hud-bar'),
+  bottomDock: document.querySelector('.bottom-dock'),
+  roomStage: document.getElementById('room-stage'),
   roomSceneContainer: document.getElementById('room-scene-container'),
   btnNavLeft: document.getElementById('btn-nav-left'),
   btnNavRight: document.getElementById('btn-nav-right'),
@@ -1185,8 +1188,19 @@ const dom = {
   dialoguePortrait: document.getElementById('dialogue-portrait'),
   dialogueSpeaker: document.getElementById('dialogue-speaker'),
   dialogueText: document.getElementById('dialogue-text'),
+  inventoryPanel: document.querySelector('.inventory-panel'),
   inventorySlots: document.getElementById('inventory-slots'),
   inventorySelectedLabel: document.getElementById('inventory-selected-label'),
+
+  // Tutorial Interaktif 4-Langkah
+  tutorialBackdrop: document.getElementById('tutorial-backdrop'),
+  tutorialOverlay: document.getElementById('tutorial-overlay'),
+  tutorialStepBadge: document.getElementById('tutorial-step-badge'),
+  tutorialStepTitle: document.getElementById('tutorial-step-title'),
+  tutorialStepText: document.getElementById('tutorial-step-text'),
+  tutorialDots: document.getElementById('tutorial-dots'),
+  btnSkipTutorial: document.getElementById('btn-skip-tutorial'),
+  btnNextTutorial: document.getElementById('btn-next-tutorial'),
 
   // Buku Nota Kuliah
   notebookModal: document.getElementById('notebook-modal'),
@@ -7020,27 +7034,170 @@ function exportRecordsToCSV() {
 }
 
 // ============================================================================
-// 12. KAWALAN ALIRAN SESI PERMAINAN & EVENT LISTENERS
+// 12. KAWALAN ALIRAN SESI PERMAINAN, TUTORIAL 4-LANGKAH & EVENT LISTENERS
 // ============================================================================
 
-function beginPlayableLabSession() {
-  dom.gameScreen.hidden = false;
-  dom.gameScreen.classList.add('active');
+const TUTORIAL_STEPS = [
+  {
+    title: 'Kawasan Makmal',
+    posClass: 'step-pos-1',
+    text: '1. Periksa Makmal: Klik atau sentuh peralatan, meja, dan mesin di dalam Makmal Agro untuk mencari petunjuk dan menyelesaikan teka-teki Sains Pertanian.',
+    spotlight: ['roomStage'],
+  },
+  {
+    title: 'Butang Bilik B1 – B4',
+    posClass: 'step-pos-2',
+    text: '2. Navigasi Bilik (B1 – B4): Gunakan butang B1 hingga B4 untuk bergerak antara 4 bahagian makmal bagi meneroka setiap sudut dan petunjuk tersembunyi.',
+    spotlight: ['roomCompass'],
+    allowStageOverflow: true,
+  },
+  {
+    title: 'Buku Nota Kuliah',
+    posClass: 'step-pos-3',
+    text: '3. Buku Nota Kuliah: Buka nota rujukan Sains Pertanian pada bila-bila masa untuk menyemak skala pH, simptom nutrien NPK, dan panduan hidroponik.',
+    spotlight: ['btnOpenNotebook'],
+    elevateHud: true,
+  },
+  {
+    title: 'Inventori & Masa Gas Beracun',
+    posClass: 'step-pos-4',
+    text: '4. Inventori & Masa: Item yang ditemui akan disimpan di ruang inventori (klik item untuk menggunakannya). Masa akan bermula sebaik sahaja anda tekan Mula!',
+    spotlight: ['inventoryPanel', 'hudTimerBox'],
+    elevateHud: true,
+    elevateDock: true,
+    buttonText: 'Mula Misi! ▸',
+  },
+];
+
+let activeTutorialStep = 0;
+
+function clearTutorialSpotlights() {
+  if (dom.gameScreen) dom.gameScreen.classList.remove('is-tutorial-active');
+  if (dom.hudBar) dom.hudBar.classList.remove('tutorial-has-spotlight');
+  if (dom.bottomDock) dom.bottomDock.classList.remove('tutorial-has-spotlight');
+  if (dom.roomStage) {
+    dom.roomStage.classList.remove('tutorial-spotlight-target', 'tutorial-allow-overflow');
+  }
+  if (dom.roomCompass) dom.roomCompass.classList.remove('tutorial-spotlight-target');
+  if (dom.btnOpenNotebook) dom.btnOpenNotebook.classList.remove('tutorial-spotlight-target');
+  if (dom.inventoryPanel) dom.inventoryPanel.classList.remove('tutorial-spotlight-target');
+  if (dom.hudTimerBox) dom.hudTimerBox.classList.remove('tutorial-spotlight-target');
+}
+
+function renderTutorialStep() {
+  const step = TUTORIAL_STEPS[activeTutorialStep];
+  if (!step || !dom.tutorialOverlay) return;
+
+  clearTutorialSpotlights();
+  if (dom.gameScreen) {
+    dom.gameScreen.classList.add('is-tutorial-active');
+  }
+
+  dom.tutorialOverlay.classList.remove('step-pos-1', 'step-pos-2', 'step-pos-3', 'step-pos-4');
+  dom.tutorialOverlay.classList.add(step.posClass);
+
+  if (dom.tutorialStepBadge) {
+    dom.tutorialStepBadge.textContent = `${activeTutorialStep + 1}/${TUTORIAL_STEPS.length}`;
+  }
+  if (dom.tutorialStepTitle) {
+    dom.tutorialStepTitle.textContent = step.title;
+  }
+  if (dom.tutorialStepText) {
+    dom.tutorialStepText.textContent = step.text;
+  }
+  if (dom.btnNextTutorial) {
+    dom.btnNextTutorial.textContent = step.buttonText || 'Seterusnya ▸';
+  }
+  if (dom.tutorialDots) {
+    dom.tutorialDots.innerHTML = TUTORIAL_STEPS.map((_, idx) => {
+      const cls =
+        idx < activeTutorialStep
+          ? 'tutorial-dot done'
+          : idx === activeTutorialStep
+            ? 'tutorial-dot active'
+            : 'tutorial-dot';
+      return `<span class="${cls}"></span>`;
+    }).join('');
+  }
+
+  if (step.allowStageOverflow && dom.roomStage) {
+    dom.roomStage.classList.add('tutorial-allow-overflow');
+  }
+  if (step.elevateHud && dom.hudBar) {
+    dom.hudBar.classList.add('tutorial-has-spotlight');
+  }
+  if (step.elevateDock && dom.bottomDock) {
+    dom.bottomDock.classList.add('tutorial-has-spotlight');
+  }
+
+  (step.spotlight || []).forEach((domKey) => {
+    const el = dom[domKey];
+    if (el) {
+      el.classList.add('tutorial-spotlight-target');
+    }
+  });
+}
+
+function showInteractiveTutorial() {
+  if (!dom.tutorialOverlay || !dom.tutorialBackdrop) {
+    startTimer();
+    return;
+  }
+  activeTutorialStep = 0;
+  dom.tutorialBackdrop.hidden = false;
+  dom.tutorialOverlay.hidden = false;
+  renderTutorialStep();
+  if (dom.btnNextTutorial) {
+    dom.btnNextTutorial.focus();
+  }
+}
+
+function closeInteractiveTutorial() {
+  clearTutorialSpotlights();
+  if (dom.tutorialBackdrop) dom.tutorialBackdrop.hidden = true;
+  if (dom.tutorialOverlay) dom.tutorialOverlay.hidden = true;
+}
+
+function finishInteractiveTutorial() {
+  closeInteractiveTutorial();
+  startTimer();
+}
+
+function startTimer() {
   gameState.isGameActive = true;
   gameState.isTimerPaused = false;
   gameState.pauseStartedAt = null;
   gameState.totalPausedMs = 0;
   gameState.playStartTime = Date.now();
   gameState.totalElapsedSeconds = 0;
+  startCountdownTimer();
+}
+
+function beginPlayableLabSession(withTutorial = true) {
+  dom.gameScreen.hidden = false;
+  dom.gameScreen.classList.add('active');
+  gameState.isGameActive = false;
+  gameState.isTimerPaused = false;
+  gameState.pauseStartedAt = null;
+  gameState.totalPausedMs = 0;
+  gameState.totalElapsedSeconds = 0;
 
   soundManager.playBGM('tense');
   renderInventory();
   navigateToRoom('view1', true);
-  startCountdownTimer();
+  updateTimerAndTensionUI();
+
+  if (withTutorial) {
+    showInteractiveTutorial();
+  } else {
+    closeInteractiveTutorial();
+    startTimer();
+  }
 }
 
 function resetToRegistrationScreen() {
   stopCountdownTimer();
+  closeInteractiveTutorial();
   gameState = createInitialGameState();
   dom.notebookModal.hidden = true;
   updateTimerAndTensionUI();
@@ -7149,7 +7306,7 @@ function initEventListeners() {
     gameState.startTimeISO = new Date(gameState.startTime).toISOString();
 
     const introPanels = buildIntroCutscene(gameState.playerName);
-    triggerCutscene(introPanels, beginPlayableLabSession);
+    triggerCutscene(introPanels, () => beginPlayableLabSession(true));
   });
 
   dom.playerNameInput.addEventListener('input', () => {
@@ -7158,7 +7315,7 @@ function initEventListeners() {
     }
   });
 
-  // 2. Cutscene
+  // 2. Cutscene & Tutorial Interaktif 4-Langkah
   dom.cutsceneDialogueBox.addEventListener('click', (e) => {
     if (e.target === dom.btnNextCutscene) return;
     advanceCutscene();
@@ -7176,6 +7333,26 @@ function initEventListeners() {
     playSFX('click');
     finishCutscene();
   });
+
+  if (dom.btnNextTutorial) {
+    dom.btnNextTutorial.addEventListener('click', () => {
+      if (activeTutorialStep < TUTORIAL_STEPS.length - 1) {
+        playSFX('click');
+        activeTutorialStep += 1;
+        renderTutorialStep();
+      } else {
+        playSFX('pickup');
+        finishInteractiveTutorial();
+      }
+    });
+  }
+
+  if (dom.btnSkipTutorial) {
+    dom.btnSkipTutorial.addEventListener('click', () => {
+      playSFX('click');
+      finishInteractiveTutorial();
+    });
+  }
 
   // 3. Navigasi Bilik
   dom.btnNavLeft.addEventListener('click', () => cycleRoom(-1));
@@ -7347,7 +7524,7 @@ function initEventListeners() {
     gameState.startTime = Date.now();
     gameState.startTimeISO = new Date(gameState.startTime).toISOString();
 
-    beginPlayableLabSession();
+    beginPlayableLabSession(false);
   });
 
   dom.btnBackToStart.addEventListener('click', () => {
@@ -7358,7 +7535,10 @@ function initEventListeners() {
   // Tutup modal menggunakan kekunci Escape
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (dom.devArchiveModal && !dom.devArchiveModal.hidden) {
+    if (dom.tutorialOverlay && !dom.tutorialOverlay.hidden) {
+      playSFX('click');
+      finishInteractiveTutorial();
+    } else if (dom.devArchiveModal && !dom.devArchiveModal.hidden) {
       closeDevArchiveModal();
     } else if (!dom.confirmClearModal.hidden) {
       dom.confirmClearModal.hidden = true;

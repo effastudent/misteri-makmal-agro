@@ -1829,6 +1829,256 @@ body.tension-phase-3 .hud-timer {
 }
 
 /* ============================================================================
+   3B. TUTORIAL INTERAKTIF 4-LANGKAH (SOROTAN & KAD PANDUAN)
+   ============================================================================ */
+
+.tutorial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(3, 7, 11, 0.78);
+  backdrop-filter: blur(2px);
+}
+
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: flex;
+  padding: 20px;
+  pointer-events: none;
+}
+
+.tutorial-overlay[hidden],
+.tutorial-backdrop[hidden] {
+  display: none;
+}
+
+.tutorial-overlay.step-pos-1 {
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 118px;
+}
+
+.tutorial-overlay.step-pos-2 {
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 20px 28px 124px;
+}
+
+.tutorial-overlay.step-pos-3 {
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 82px 24px 20px;
+}
+
+.tutorial-overlay.step-pos-4 {
+  align-items: center;
+  justify-content: center;
+}
+
+.tutorial-card {
+  pointer-events: auto;
+  width: min(100%, 450px);
+  background: linear-gradient(180deg, #13222a 0%, #0d181e 100%);
+  border: 2.5px solid #f2b749;
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.85), 0 0 0 3px var(--ink-black), 0 0 24px rgba(242, 183, 73, 0.28);
+  padding: 16px 18px 16px;
+  animation: modalPopIn 0.2s var(--ease-snappy);
+}
+
+.tutorial-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tutorial-step-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tutorial-step-badge {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  background: var(--accent-amber);
+  color: #101417;
+  border: 1.5px solid var(--ink-black);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tutorial-step-title {
+  font-family: var(--font-display);
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #fde68a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-skip-tutorial {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 5px 10px;
+  background: rgba(18, 33, 41, 0.95);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.btn-skip-tutorial:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-amber);
+  background: #1b313b;
+}
+
+.tutorial-step-text {
+  margin: 0 0 14px 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+.tutorial-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 194, 206, 0.16);
+}
+
+.tutorial-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tutorial-dot {
+  width: 18px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(155, 179, 189, 0.24);
+  transition: background-color 0.2s ease, width 0.2s ease;
+}
+
+.tutorial-dot.done {
+  background: var(--accent-teal);
+}
+
+.tutorial-dot.active {
+  width: 26px;
+  background: var(--accent-amber);
+}
+
+.btn-next-tutorial {
+  min-height: 38px;
+  padding: 8px 16px;
+  background: var(--accent-amber);
+  color: #101417;
+  border: 2px solid var(--ink-black);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink-black);
+  transition: background-color 0.15s ease, transform 0.15s var(--ease-snappy);
+}
+
+.btn-next-tutorial:hover {
+  background: var(--accent-amber-bright);
+  transform: translateY(-1px);
+}
+
+/* Kesan Sorotan Elemen Antara Muka Semasa Tutorial */
+.game-shell.is-tutorial-active .hud-bar,
+.game-shell.is-tutorial-active .room-stage,
+.game-shell.is-tutorial-active .bottom-dock {
+  pointer-events: none;
+}
+
+.hud-bar.tutorial-has-spotlight,
+.bottom-dock.tutorial-has-spotlight {
+  position: relative;
+  z-index: 55;
+}
+
+.hud-bar.tutorial-has-spotlight::after,
+.bottom-dock.tutorial-has-spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 7, 11, 0.78);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.room-stage.tutorial-allow-overflow {
+  overflow: visible;
+}
+
+.room-stage.tutorial-allow-overflow .room-scene-container {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.room-stage.tutorial-spotlight-target {
+  z-index: 55;
+  border-color: #f2b749;
+  box-shadow:
+    0 0 0 3px #f2b749,
+    0 0 28px rgba(242, 183, 73, 0.72),
+    0 18px 46px rgba(0, 0, 0, 0.75);
+}
+
+.room-compass.tutorial-spotlight-target {
+  z-index: 55;
+  background: #0b161c;
+  border: 2px solid #f2b749;
+  box-shadow:
+    0 0 0 2px rgba(242, 183, 73, 0.45),
+    0 0 22px rgba(242, 183, 73, 0.82);
+}
+
+.btn-notebook.tutorial-spotlight-target,
+.hud-timer-box.tutorial-spotlight-target {
+  position: relative;
+  z-index: 6;
+  border-color: #f2b749;
+  box-shadow:
+    0 0 0 3px #f2b749,
+    0 0 22px rgba(242, 183, 73, 0.85);
+}
+
+.inventory-panel.tutorial-spotlight-target {
+  position: relative;
+  z-index: 6;
+  background: var(--bg-slate);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  margin: -4px -6px;
+  box-shadow:
+    0 0 0 3px #f2b749,
+    0 0 24px rgba(242, 183, 73, 0.78);
+}
+
+/* ============================================================================
    4. MODAL & PAPAN PEMUKA ADMIN
    ============================================================================ */
 
@@ -3852,6 +4102,28 @@ body.tension-phase-3 .hud-timer {
   .cert-footer {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .tutorial-overlay {
+    padding: 12px;
+  }
+
+  .tutorial-overlay.step-pos-1,
+  .tutorial-overlay.step-pos-2,
+  .tutorial-overlay.step-pos-3,
+  .tutorial-overlay.step-pos-4 {
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+  }
+
+  .tutorial-card {
+    padding: 14px 14px 13px;
+  }
+
+  .tutorial-card-header {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 

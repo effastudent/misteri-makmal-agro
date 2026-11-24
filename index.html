@@ -504,6 +504,47 @@
     </section>
 
     <!-- =========================================================
+         3B. TUTORIAL INTERAKTIF 4-LANGKAH (SELEPAS INTRO)
+         ========================================================= -->
+    <div id="tutorial-backdrop" class="tutorial-backdrop" hidden aria-hidden="true"></div>
+
+    <div
+      id="tutorial-overlay"
+      class="tutorial-overlay step-pos-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tutorial-step-title"
+      aria-describedby="tutorial-step-text"
+      hidden
+    >
+      <div id="tutorial-card" class="tutorial-card">
+        <div class="tutorial-card-header">
+          <div class="tutorial-step-meta">
+            <span id="tutorial-step-badge" class="tutorial-step-badge">1/4</span>
+            <span id="tutorial-step-title" class="tutorial-step-title">Kawasan Makmal</span>
+          </div>
+          <button id="btn-skip-tutorial" type="button" class="btn-skip-tutorial">
+            Langkau Tutorial (Skip) »
+          </button>
+        </div>
+
+        <p id="tutorial-step-text" class="tutorial-step-text"></p>
+
+        <div class="tutorial-card-footer">
+          <div id="tutorial-dots" class="tutorial-dots" aria-hidden="true">
+            <span class="tutorial-dot active"></span>
+            <span class="tutorial-dot"></span>
+            <span class="tutorial-dot"></span>
+            <span class="tutorial-dot"></span>
+          </div>
+          <button id="btn-next-tutorial" type="button" class="btn-next-tutorial">
+            Seterusnya ▸
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
          4. MODAL BUKU NOTA KULIAH (HINT JOURNAL)
          ========================================================= -->
     <div
