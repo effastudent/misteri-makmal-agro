@@ -6,12 +6,12 @@
     <title>Escape: Makmal Agro</title>
     <meta
       name="description"
-      content="Permainan bilik melarikan diri misteri 2D bertema Sains Pertanian (ISMP Semester 1, UPSI)."
+      content="Permainan bilik melarikan diri misteri 2D bertema Sains Pertanian."
     />
     <meta property="og:title" content="Escape: Makmal Agro" />
     <meta
       property="og:description"
-      content="Permainan bilik melarikan diri misteri 2D bertema Sains Pertanian (ISMP Semester 1, UPSI)."
+      content="Permainan bilik melarikan diri misteri 2D bertema Sains Pertanian."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -32,9 +32,9 @@
     <div id="penalty-flash" class="penalty-flash" aria-hidden="true"></div>
 
     <!-- =========================================================
-         1. SKRIN PENDAFTARAN PEMAIN ("KAD AKSES MAKMAL UPSI")
+         1. SKRIN PENDAFTARAN PEMAIN ("KAD AKSES MAKMAL")
          ========================================================= -->
-    <section id="registration-screen" class="screen active" aria-label="Kad Akses Makmal UPSI">
+    <section id="registration-screen" class="screen active" aria-label="Kad Akses Makmal">
       <!-- Atmospheric Ghost-Case Lab Silhouette Backdrop -->
       <div class="start-backdrop" aria-hidden="true">
         <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" class="start-bg-svg">
@@ -105,7 +105,7 @@
 
         <!-- Single Interactive Blue University Matric / Lab Access Card Form -->
         <form id="registration-form" class="matric-form" novalidate aria-labelledby="access-card-heading">
-          <div class="upsi-matric-card">
+          <div class="agro-matric-card">
             <!-- Subtle Geometric Security Wave Pattern -->
             <svg class="matric-card-waves" viewBox="0 0 700 420" preserveAspectRatio="none" aria-hidden="true">
               <defs>
@@ -132,8 +132,7 @@
                   </svg>
                 </div>
                 <div>
-                  <h2 id="access-card-heading" class="matric-card-title">KAD AKSES MAKMAL UPSI</h2>
-                  <p class="matric-card-sub">UNIVERSITI PENDIDIKAN SULTAN IDRIS</p>
+                  <h2 id="access-card-heading" class="matric-card-title">KAD AKSES MAKMAL</h2>
                 </div>
               </div>
 
@@ -188,7 +187,6 @@
                     role="radio"
                     aria-checked="true"
                   >
-                    <span aria-hidden="true">👨</span>
                     <span class="avatar-option-label">Lelaki</span>
                   </button>
                   <button
@@ -198,18 +196,17 @@
                     role="radio"
                     aria-checked="false"
                   >
-                    <span aria-hidden="true">👩</span>
                     <span class="avatar-option-label">Perempuan</span>
                   </button>
                 </div>
 
-                <!-- Interactive Mini QR Code SVG (Easter Egg) -->
+                <!-- Interactive Mini QR Code SVG (Pembangun Sistem) -->
                 <button
                   type="button"
                   id="btn-qr-easter-egg"
                   class="matric-qr-wrap matric-qr-btn"
-                  title="Imbas Kod QR"
-                  aria-label="Imbas Kod QR Rekod Arkib Pembangun Sistem"
+                  title="Pembangun Sistem"
+                  aria-label="Pembangun Sistem"
                 >
                   <svg viewBox="0 0 48 48" width="44" height="44" class="matric-qr-svg" aria-hidden="true">
                     <rect width="48" height="48" rx="4" fill="#ffffff" />
@@ -235,17 +232,12 @@
                     <rect x="36" y="34" width="8" height="4" fill="#0b2447" />
                     <rect x="34" y="40" width="6" height="4" fill="#0b2447" />
                   </svg>
-                  <span class="matric-qr-label">SAH MAKMAL AGRO</span>
+                  <span class="matric-qr-label">PEMBANGUN SISTEM</span>
                 </button>
               </div>
 
-              <!-- Right Column: ID Tag, Inline Frosted Inputs, Barcode -->
+              <!-- Right Column: Inline Frosted Inputs & Barcode -->
               <div class="matric-card-right">
-                <div class="matric-id-strip">
-                  <span class="matric-id-tag">ID: UPSI-AGRO-2026</span>
-                  <span class="matric-faculty-tag">SAINS PERTANIAN · SEM 1</span>
-                </div>
-
                 <div class="matric-form-fields">
                   <div class="matric-field-group">
                     <label for="player-name" class="matric-field-label">
@@ -282,10 +274,6 @@
 
                 <!-- Decorative Barcode SVG -->
                 <div class="matric-card-footer">
-                  <div class="matric-clearance-badge">
-                    <span class="clearance-dot" aria-hidden="true"></span>
-                    <span>AKSES: MAKMAL AGRO</span>
-                  </div>
                   <div class="matric-barcode-wrap" aria-hidden="true">
                     <svg viewBox="0 0 180 34" width="160" height="30" class="matric-barcode-svg">
                       <rect width="180" height="34" rx="3" fill="#ffffff" />
@@ -322,7 +310,7 @@
                         <rect x="167" y="4" width="2" height="22" />
                         <rect x="171" y="4" width="2" height="22" />
                       </g>
-                      <text x="90" y="32" text-anchor="middle" fill="#0b2447" font-family="JetBrains Mono, monospace" font-size="6.5" font-weight="700">UPSI-AGRO-2026-LAB</text>
+                      <text x="90" y="32" text-anchor="middle" fill="#0b2447" font-family="JetBrains Mono, monospace" font-size="7.5" font-weight="700" letter-spacing="1.2">AGRO LAB</text>
                     </svg>
                   </div>
                 </div>
@@ -688,10 +676,13 @@
       <div class="modal-card modal-admin">
         <div class="modal-header admin-header">
           <div>
-            <p class="modal-kicker">Analitik Pertandingan Inovasi · ISMP Sains Pertanian UPSI</p>
+            <p class="modal-kicker">Analitik Pertandingan Inovasi · Sains Pertanian</p>
             <h2 id="admin-dash-title" class="modal-title">Papan Pemuka Rekod Makmal</h2>
           </div>
           <div class="admin-header-actions">
+            <button id="btn-play-trailer" type="button" class="btn-trailer-launch">
+              🎬 Mainkan Trailer
+            </button>
             <button id="btn-refresh-admin" type="button" class="btn-secondary">
               🔄 Segar Semula (Refresh)
             </button>
@@ -747,7 +738,7 @@
                     <th>Tempoh Tamat</th>
                     <th>Bil. Salah</th>
                     <th>Petunjuk</th>
-                    <th>Gred UPSI</th>
+                    <th>Gred Prestasi</th>
                   </tr>
                 </thead>
                 <tbody id="admin-leaderboard-body"></tbody>
@@ -769,7 +760,7 @@
                     <th>Status</th>
                     <th>Bilangan Salah (Pecahan)</th>
                     <th>Petunjuk</th>
-                    <th>Gred UPSI</th>
+                    <th>Gred Prestasi</th>
                   </tr>
                 </thead>
                 <tbody id="admin-log-body"></tbody>
@@ -806,7 +797,7 @@
     </div>
 
     <!-- =========================================================
-         7B. MODAL EASTER EGG QR: REKOD ARKIB PEMBANGUN SISTEM
+         7B. MODAL PEMBANGUN SISTEM
          ========================================================= -->
     <div
       id="dev-archive-modal"
@@ -818,49 +809,19 @@
     >
       <div class="modal-card modal-dev-archive">
         <div class="modal-header dev-archive-header">
-          <div>
-            <p class="dev-archive-kicker">REKOD ARKIB PEMBANGUN SISTEM · KOD QR DISAHKAN</p>
-            <h2 id="dev-archive-title" class="modal-title">🔒 ARKIB RAHSIA: PEMBANGUN SISTEM</h2>
-          </div>
+          <h2 id="dev-archive-title" class="modal-title">PEMBANGUN SISTEM</h2>
           <button
             id="btn-close-dev-archive"
             type="button"
             class="btn-close-modal"
-            aria-label="Tutup Rekod Arkib Pembangun Sistem"
+            aria-label="Tutup Pembangun Sistem"
           >
             ✕
           </button>
         </div>
 
         <div class="dev-archive-body">
-          <div class="dev-archive-top">
-            <div class="dev-badge-wrap">
-              <div class="dev-avatar-ring">
-                <!-- Tukar atribut src di bawah sekiranya mahu menggantikan gambar potret pembangun -->
-                <img
-                  id="dev-avatar"
-                  src="./assets/aistudio/passport_pic_40d2a183.jpg"
-                  alt="Pembangun Sistem"
-                  class="dev-avatar-img"
-                />
-              </div>
-              <span class="dev-clearance-chip">PAS KESELAMATAN · ARAS 1</span>
-            </div>
-
-            <div class="dev-meta-col">
-              <div class="dev-meta-row">
-                <span class="dev-meta-label">Program</span>
-                <span class="dev-meta-value">ISMP Sains Pertanian · Universiti Pendidikan Sultan Idris (UPSI)</span>
-              </div>
-              <div class="dev-meta-row">
-                <span class="dev-meta-label">Peranan</span>
-                <span class="dev-meta-value">Pencipta &amp; Pembangun Game "Escape: Makmal Agro"</span>
-              </div>
-            </div>
-          </div>
-
           <div class="dev-roster-box">
-            <h3 class="dev-roster-title">Nama Pembangun (Susunan Abjad)</h3>
             <ol class="dev-roster-list">
               <li>
                 <span class="dev-member-name">Cynthia Crystal Liyepa Anak Tikong</span>
@@ -888,7 +849,7 @@
 
         <div class="dev-archive-footer">
           <button id="btn-close-dev-archive-footer" type="button" class="btn-primary">
-            Tutup Arkib Rahsia
+            Tutup
           </button>
         </div>
       </div>
@@ -907,14 +868,14 @@
     >
       <div class="modal-card modal-end">
         <div id="end-emblem" class="end-emblem" aria-hidden="true"></div>
-        <p id="end-kicker" class="end-kicker">Sijil &amp; Keputusan Misi UPSI · ISMP Sains Pertanian</p>
+        <p id="end-kicker" class="end-kicker">Sijil &amp; Keputusan Misi · Sains Pertanian</p>
         <h2 id="end-title" class="end-title">MASA TAMAT — GAS BERACUN DILEPASKAN</h2>
         <p id="end-subtitle" class="end-subtitle">
           Gas beracun telah dilepaskan dan semua pintu Makmal Agro dikunci sepenuhnya sebelum protokol eksperimen berjaya disahkan.
         </p>
 
         <div id="victory-certificate-wrap" class="victory-certificate-wrap" hidden>
-          <div id="victory-certificate-preview" class="cert-preview" aria-label="Pratonton Sijil Pencapaian UPSI"></div>
+          <div id="victory-certificate-preview" class="cert-preview" aria-label="Pratonton Sijil Pencapaian Makmal Agro"></div>
           <p id="victory-meta-strip" class="victory-meta-strip"></p>
         </div>
 
@@ -952,7 +913,7 @@
             <span id="end-stat-status" class="end-stat-val">—</span>
           </div>
           <div class="end-stat end-stat-grade-wide">
-            <span class="end-stat-label">Gred Prestasi UPSI</span>
+            <span class="end-stat-label">Gred Prestasi</span>
             <span id="end-stat-grade" class="end-stat-val">F</span>
           </div>
         </div>
@@ -965,6 +926,36 @@
           <button id="btn-back-to-start" type="button" class="btn-secondary">
             Kembali ke Skrin Utama
           </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         9. MOD TRELER SINEMATIK AUTO-MAIN (AKSES PERIBADI ADMIN / ?trailer=1)
+         ========================================================= -->
+    <section
+      id="trailer-overlay"
+      class="trailer-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Treler Sinematik Escape: Makmal Agro"
+      hidden
+    >
+      <button
+        id="btn-close-trailer"
+        type="button"
+        class="btn-close-trailer"
+        aria-label="Tutup Trailer"
+      >
+        ✕ Tutup
+      </button>
+
+      <div class="trailer-letterbox">
+        <div id="trailer-stage" class="trailer-stage" data-aspect="16:9">
+          <div id="trailer-visual-layer" class="trailer-visual-layer"></div>
+          <div class="trailer-vignette" aria-hidden="true"></div>
+          <div id="trailer-strobe-layer" class="trailer-strobe-layer" aria-hidden="true"></div>
+          <div id="trailer-overlay-text" class="trailer-overlay-text" hidden></div>
         </div>
       </div>
     </section>

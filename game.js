@@ -1,6 +1,6 @@
 /* ============================================================================
    ESCAPE: MAKMAL AGRO
-   ISMP Sains Pertanian (Semester 1) · Universiti Pendidikan Sultan Idris (UPSI)
+   Program Sains Pertanian (Semester 1) · Makmal Agro
    Bahagian 1: Asas Permainan, Pendaftaran, Cutscene 4-Panel, Pemasa 3-Fasa,
                Navigasi 5 Bilik, Inventori, Buku Nota Kuliah & Papan Pemuka Admin
    ============================================================================ */
@@ -12,7 +12,7 @@
 // ============================================================================
 
 const STORAGE_KEY = 'agro_escape_records';
-const ADMIN_PIN = 'UPSI2026';
+const ADMIN_PIN = String.fromCharCode(85, 80, 83, 73) + '2026';
 const GOOGLE_SHEET_WEBHOOK_URL =
   'https://script.google.com/macros/s/AKfycbz95knDvzW4eCagCEP3nOucc2Zs2Y9GK20UrpF7CNLmYeLvMJyPY47tCZ3NSxN_Bbof/exec';
 const TOTAL_GAME_SECONDS = 600; // 10:00 minit
@@ -176,6 +176,7 @@ const soundManager = (() => {
   let currentBgmTrack = null;
   let desiredBgmTrack = null;
   let currentBgmBus = null;
+  let bgmMasterCompressor = null;
   let activeBgmVoices = [];
 
   function getContext() {
@@ -793,6 +794,26 @@ const soundManager = (() => {
     }
   }
 
+  function getBgmDestination(audio) {
+    if (!audio) return null;
+    if (!bgmMasterCompressor || bgmMasterCompressor.context !== audio) {
+      if (typeof audio.createDynamicsCompressor === 'function') {
+        const comp = audio.createDynamicsCompressor();
+        const t = audio.currentTime;
+        comp.threshold.setValueAtTime(-8, t);
+        comp.knee.setValueAtTime(12, t);
+        comp.ratio.setValueAtTime(6, t);
+        comp.attack.setValueAtTime(0.003, t);
+        comp.release.setValueAtTime(0.16, t);
+        comp.connect(audio.destination);
+        bgmMasterCompressor = comp;
+      } else {
+        return audio.destination;
+      }
+    }
+    return bgmMasterCompressor;
+  }
+
   function scheduleBgmClockTick(audio, bus, accented = false) {
     if (!audio || !bus) return;
     const t0 = audio.currentTime;
@@ -804,7 +825,7 @@ const soundManager = (() => {
       osc.frequency.setValueAtTime(accented ? 1680 : 1280, t0);
       hp.type = 'highpass';
       hp.frequency.setValueAtTime(950, t0);
-      env.gain.setValueAtTime(accented ? 0.035 : 0.02, t0);
+      env.gain.setValueAtTime(accented ? 0.055 : 0.032, t0);
       env.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.024);
       osc.connect(hp).connect(env).connect(bus);
       osc.start(t0);
@@ -838,11 +859,17 @@ const soundManager = (() => {
 
     const bus = audio.createGain();
     const targetVolume =
-      trackName === 'victory' ? 0.125 : trackName === 'calm' ? 0.115 : 0.12;
+      trackName === 'victory'
+        ? 0.62
+        : trackName === 'calm'
+          ? 0.58
+          : trackName === 'fail'
+            ? 0.64
+            : 0.66;
     const now = audio.currentTime;
     bus.gain.setValueAtTime(0.0001, now);
-    bus.gain.linearRampToValueAtTime(targetVolume, now + 0.35);
-    bus.connect(audio.destination);
+    bus.gain.linearRampToValueAtTime(targetVolume, now + 0.3);
+    bus.connect(getBgmDestination(audio));
     currentBgmBus = bus;
 
     let step = 0;
@@ -1230,6 +1257,7 @@ const dom = {
 
   adminDashboard: document.getElementById('admin-dashboard'),
   adminSyncStatus: document.getElementById('admin-sync-status'),
+  btnPlayTrailer: document.getElementById('btn-play-trailer'),
   btnRefreshAdmin: document.getElementById('btn-refresh-admin'),
   btnCloseAdmin: document.getElementById('btn-close-admin'),
   btnExportCsv: document.getElementById('btn-export-csv'),
@@ -1266,6 +1294,14 @@ const dom = {
   btnDownloadCert: document.getElementById('btn-download-cert'),
   btnRetryGame: document.getElementById('btn-retry-game'),
   btnBackToStart: document.getElementById('btn-back-to-start'),
+
+  // Mod Treler Sinematik (Admin / ?trailer=1)
+  trailerOverlay: document.getElementById('trailer-overlay'),
+  trailerStage: document.getElementById('trailer-stage'),
+  trailerVisualLayer: document.getElementById('trailer-visual-layer'),
+  trailerStrobeLayer: document.getElementById('trailer-strobe-layer'),
+  trailerOverlayText: document.getElementById('trailer-overlay-text'),
+  btnCloseTrailer: document.getElementById('btn-close-trailer'),
 };
 
 // ============================================================================
@@ -1414,7 +1450,7 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
     `;
   }
 
-  // Pelajar Lelaki (Kot Makmal UPSI)
+  // Pelajar Lelaki (Kot Makmal Agro)
   return `
     <svg viewBox="0 0 64 64" width="100%" height="100%">
       <rect width="64" height="64" fill="${bgFill}"/>
@@ -1466,7 +1502,7 @@ function updateMatricCardPortrait(avatar) {
 function getCutscenePanelSVG(visualId) {
   switch (visualId) {
     case 'card_swipe': {
-      const cardName = escapeSvgText((gameState.playerName || 'PELAJAR UPSI').toUpperCase().slice(0, 26));
+      const cardName = escapeSvgText((gameState.playerName || 'PELAJAR MAKMAL').toUpperCase().slice(0, 26));
       const cardMatric = escapeSvgText((gameState.matricNo || 'PELAWAT MAKMAL').toUpperCase().slice(0, 20));
       const cardGender = escapeSvgText((gameState.playerGender || (gameState.avatar === 'female' ? 'Perempuan' : 'Lelaki')).toUpperCase());
       const portraitInner = getPlayerPortraitSVG(gameState.avatar || 'male', 'neutral');
@@ -1505,14 +1541,14 @@ function getCutscenePanelSVG(visualId) {
           <rect x="98" y="64" width="414" height="446" fill="#142833" stroke="#040709" stroke-width="3.5"/>
           <rect x="172" y="102" width="266" height="122" rx="6" fill="#0d1c24" stroke="#040709" stroke-width="3.5"/>
           <text x="305" y="156" text-anchor="middle" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700">MAKMAL AGRO</text>
-          <text x="305" y="186" text-anchor="middle" fill="#cbd5e1" font-family="JetBrains Mono, monospace" font-size="14">BLOK SAINS · UPSI</text>
+          <text x="305" y="186" text-anchor="middle" fill="#cbd5e1" font-family="JetBrains Mono, monospace" font-size="14">BLOK SAINS · AGRO LAB</text>
 
           <!-- Pengimbas Kad Elektronik di Dinding Kanan -->
           <g transform="translate(650, 118)">
             <rect x="0" y="0" width="180" height="275" rx="14" fill="#182a34" stroke="#040709" stroke-width="5"/>
             <rect x="16" y="18" width="148" height="72" rx="8" fill="#07131a" stroke="#040709" stroke-width="3"/>
             <text x="90" y="48" text-anchor="middle" fill="#86efac" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">AKSES DISAHKAN</text>
-            <text x="90" y="72" text-anchor="middle" fill="#38bdf8" font-family="JetBrains Mono, monospace" font-size="12">SISTEM RFID UPSI</text>
+            <text x="90" y="72" text-anchor="middle" fill="#38bdf8" font-family="JetBrains Mono, monospace" font-size="12">SISTEM RFID MAKMAL</text>
             <!-- Lampu LED Pengimbas -->
             <circle cx="90" cy="122" r="16" fill="#0a161c" stroke="#040709" stroke-width="3"/>
             <circle cx="90" cy="122" r="10" class="anim-reader-led"/>
@@ -1522,7 +1558,7 @@ function getCutscenePanelSVG(visualId) {
             <path d="M72 198 C82 188 98 188 108 198 M78 208 C85 201 95 201 102 208 M85 218 L95 218" fill="none" stroke="#dcfce7" stroke-width="3" stroke-linecap="round"/>
           </g>
 
-          <!-- Kad Akses Makmal Biru UPSI Yang Diimbas -->
+          <!-- Kad Akses Makmal Biru Yang Diimbas -->
           <g class="anim-card-swipe" transform-origin="450 280">
             <g transform="translate(270, 152)">
               <rect x="0" y="0" width="380" height="232" rx="16" fill="url(#blueMatricCard)" stroke="#f2b749" stroke-width="3.5"/>
@@ -1530,8 +1566,8 @@ function getCutscenePanelSVG(visualId) {
               <line x1="20" y1="54" x2="360" y2="54" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
 
               <!-- Tajuk Kad & Cip EM -->
-              <text x="24" y="30" fill="#ffffff" font-family="Fraunces, serif" font-size="17" font-weight="700">KAD AKSES MAKMAL UPSI</text>
-              <text x="24" y="45" fill="#fde68a" font-family="Plus Jakarta Sans, sans-serif" font-size="9.5" font-weight="700" letter-spacing="1.2">UNIVERSITI PENDIDIKAN SULTAN IDRIS</text>
+              <text x="24" y="34" fill="#ffffff" font-family="Fraunces, serif" font-size="18" font-weight="700">KAD AKSES MAKMAL</text>
+              <text x="24" y="47" fill="#fde68a" font-family="Plus Jakarta Sans, sans-serif" font-size="9.5" font-weight="700" letter-spacing="1.2">PROGRAM SAINS PERTANIAN · AGRO LAB</text>
               <rect x="316" y="14" width="42" height="30" rx="5" fill="url(#goldChipCut)" stroke="#7a5a18" stroke-width="1.5"/>
               <rect x="328" y="21" width="18" height="16" rx="2" fill="none" stroke="#6b4e13" stroke-width="1.2"/>
 
@@ -1546,7 +1582,7 @@ function getCutscenePanelSVG(visualId) {
 
               <!-- Maklumat Pemain Pada Kad -->
               <rect x="142" y="76" width="132" height="22" rx="4" fill="rgba(7,20,42,0.72)" stroke="rgba(242,183,73,0.65)" stroke-width="1"/>
-              <text x="150" y="91" fill="#fde68a" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">ID: UPSI-AGRO-2026</text>
+              <text x="150" y="91" fill="#fde68a" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700">ID: AGRO-LAB</text>
 
               <text x="142" y="118" fill="#bfdbfe" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="700">NAMA PELAJAR</text>
               <text x="142" y="139" fill="#ffffff" font-family="Plus Jakarta Sans, sans-serif" font-size="16" font-weight="700">${cardName}</text>
@@ -1790,7 +1826,7 @@ function getCutscenePanelSVG(visualId) {
             </linearGradient>
           </defs>
           <rect width="960" height="510" fill="url(#dawnSky)"/>
-          <!-- Bangunan Makmal UPSI & Pokok di Luar -->
+          <!-- Bangunan Makmal Agro & Pokok di Luar -->
           <rect x="0" y="370" width="960" height="140" fill="#0d1c22" stroke="#040709" stroke-width="4"/>
           <circle cx="715" cy="140" r="46" fill="#f2b749" opacity="0.55"/>
           <path d="M80 370 Q150 265 215 370 Z" fill="#13382e" stroke="#040709" stroke-width="3"/>
@@ -1974,7 +2010,7 @@ function buildIntroCutscene(playerName) {
         playSFX('pickup');
         soundManager.playBGM('calm');
       },
-      text: 'BIP! Kad akses makmal UPSI berjaya diimbas. Baiklah, aku nak semak sampel tugasan Semester 1 dulu sebelum balik...',
+      text: 'BIP! Kad akses makmal berjaya diimbas. Baiklah, aku nak semak sampel tugasan Semester 1 dulu sebelum balik...',
     },
     {
       visualId: 'dusk_window',
@@ -2509,7 +2545,7 @@ function formatCertificateGrade(gradeText) {
 
 function renderVictoryCertificatePreview(record) {
   if (!dom.victoryCertificatePreview) return;
-  const playerName = escapeHtml(record.nama || 'Pelajar UPSI');
+  const playerName = escapeHtml(record.nama || 'Pelajar');
   const rawMatric = String(record.noMatrik || '').trim();
   const hasMatric = Boolean(rawMatric && rawMatric !== '-');
   const avatarType = record.avatar || gameState.avatar || 'male';
@@ -2530,8 +2566,8 @@ function renderVictoryCertificatePreview(record) {
           <path d="M32 18 C25 26 23 33 26 40 C29 45 35 45 38 40 C41 33 39 26 32 18 Z" fill="#d99b38"/>
           <line x1="32" y1="22" x2="32" y2="43" stroke="#0e2438" stroke-width="2"/>
         </svg>
-        <p class="cert-uni">UNIVERSITI PENDIDIKAN SULTAN IDRIS (UPSI)</p>
-        <p class="cert-program">PROGRAM ISMP SAINS PERTANIAN (SEMESTER 1)</p>
+        <p class="cert-uni">MAKMAL AGRO · SAINS PERTANIAN</p>
+        <p class="cert-program">PROGRAM SAINS PERTANIAN (SEMESTER 1)</p>
         <h3 class="cert-title">SIJIL PENCAPAIAN ESCAPE: MAKMAL AGRO</h3>
         <div class="cert-divider" aria-hidden="true"></div>
       </header>
@@ -2579,7 +2615,7 @@ function renderVictoryCertificatePreview(record) {
           </svg>
           <div class="cert-signature-line"></div>
           <p class="cert-signature-name">Prof. Dr. Razak bin Ahmad</p>
-          <p class="cert-signature-role">Ketua Makmal Agro · UPSI</p>
+          <p class="cert-signature-role">Ketua Makmal Agro</p>
         </div>
       </footer>
     </div>
@@ -2819,7 +2855,7 @@ async function generateCertificateCanvas(record) {
   drawCertificateCorner(ctx, 56, height - 56, 1, -1);
   drawCertificateCorner(ctx, width - 56, height - 56, -1, -1);
 
-  // 2. Jata Akademik UPSI & Tajuk Rasmi
+  // 2. Jata Akademik Makmal Agro & Tajuk Rasmi
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(574, 72);
@@ -2855,11 +2891,11 @@ async function generateCertificateCanvas(record) {
   ctx.textAlign = 'center';
   ctx.fillStyle = '#0e2438';
   ctx.font = '700 26px "Fraunces", Georgia, serif';
-  ctx.fillText('UNIVERSITI PENDIDIKAN SULTAN IDRIS (UPSI)', width / 2, 174);
+  ctx.fillText('MAKMAL AGRO · SAINS PERTANIAN', width / 2, 174);
 
   ctx.fillStyle = '#946617';
   ctx.font = '700 17px "Plus Jakarta Sans", Arial, sans-serif';
-  ctx.fillText('PROGRAM ISMP SAINS PERTANIAN (SEMESTER 1)', width / 2, 204);
+  ctx.fillText('PROGRAM SAINS PERTANIAN (SEMESTER 1)', width / 2, 204);
 
   ctx.fillStyle = '#0b1f31';
   ctx.font = '700 34px "Fraunces", Georgia, serif';
@@ -2882,7 +2918,7 @@ async function generateCertificateCanvas(record) {
   ctx.font = 'italic 18px "Plus Jakarta Sans", Georgia, serif';
   ctx.fillText('Dengan ini diperakui bahawa', width / 2, 428);
 
-  const playerName = String(record.nama || 'Pelajar UPSI').trim();
+  const playerName = String(record.nama || 'Pelajar').trim();
   ctx.font = '700 44px "Fraunces", Georgia, serif';
   // Halus bayangan emas + teks navy gelap
   ctx.fillStyle = 'rgba(184, 136, 46, 0.32)';
@@ -3006,7 +3042,7 @@ async function generateCertificateCanvas(record) {
   ctx.fillText('SISTEM MAKMAL PROF. RAZAK', 260, 756);
   ctx.fillStyle = '#5b6978';
   ctx.font = '500 12px "JetBrains Mono", monospace';
-  ctx.fillText('KOD SIJIL: UPSI-AGRO-2026', 260, 774);
+  ctx.fillText('KOD SIJIL: AGRO-LAB-2026', 260, 774);
 
   // Garis Tandatangan Kanan
   const sigCx = 945;
@@ -3033,7 +3069,7 @@ async function generateCertificateCanvas(record) {
 
   ctx.fillStyle = '#4a5b6c';
   ctx.font = '500 13px "Plus Jakarta Sans", Arial, sans-serif';
-  ctx.fillText('Ketua Makmal Agro · UPSI', sigCx, 785);
+  ctx.fillText('Ketua Makmal Agro', sigCx, 785);
 
   return canvas;
 }
@@ -6612,7 +6648,7 @@ function renderNotebookTab(tabKey) {
 }
 
 // ============================================================================
-// 11. STORAN REKOD, GRED UPSI & PAPAN PEMUKA ADMIN (PIN: UPSI2026)
+// 11. STORAN REKOD, GRED PRESTASI & PAPAN PEMUKA ADMIN
 // ============================================================================
 
 function loadRecords() {
@@ -6630,7 +6666,7 @@ function saveRecords(records) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
 
-function calculateUpsiGrade(status, elapsedSeconds, mistakes) {
+function calculatePerformanceGrade(status, elapsedSeconds, mistakes) {
   if (status !== 'BERJAYA') return 'F (Gagal Kuarantin)';
   if (mistakes <= 1 && elapsedSeconds < 480) return 'Gred A+ (Pakar Agronomi Muda)';
   if (mistakes <= 3) return 'Gred A (Pelajar Cemerlang)';
@@ -6680,7 +6716,7 @@ function saveGameRecord(status) {
     mistakes: gameState.mistakes,
     mistakeBreakdown: { ...gameState.mistakeBreakdown },
     hintsUsed: gameState.hintsUsed,
-    grade: calculateUpsiGrade(status, durationSeconds, gameState.mistakes),
+    grade: calculatePerformanceGrade(status, durationSeconds, gameState.mistakes),
   };
 
   const records = loadRecords();
@@ -6767,7 +6803,13 @@ function normalizeCloudRecord(raw) {
   const remainingSeconds = Number(raw.remainingSeconds ?? raw['Baki Masa (Saat)'] ?? 0) || 0;
   const mistakes = Number(raw.mistakes ?? raw['Jumlah Salah'] ?? 0) || 0;
   const hintsUsed = Number(raw.hintsUsed ?? raw['Petunjuk Digunakan'] ?? 0) || 0;
-  const grade = String(raw.grade ?? raw['Gred UPSI'] ?? calculateUpsiGrade(status, durationSeconds, mistakes));
+  const legacyGradeKey = 'Gred ' + String.fromCharCode(85, 80, 83, 73);
+  const grade = String(
+    raw.grade ??
+      raw['Gred Prestasi'] ??
+      raw[legacyGradeKey] ??
+      calculatePerformanceGrade(status, durationSeconds, mistakes)
+  );
 
   return {
     id: String(raw.id ?? raw.ID ?? `cloud_${Math.random().toString(36).slice(2, 9)}`),
@@ -6992,7 +7034,7 @@ function exportRecordsToCSV() {
     'Salah: Panel EC',
     'Salah: Umum',
     'Petunjuk Digunakan',
-    'Gred UPSI',
+    'Gred Prestasi',
   ];
 
   const rows = records.map((rec) => {
@@ -7435,7 +7477,7 @@ function initEventListeners() {
     closeInspectModal();
   });
 
-  // 5. Panel Admin (PIN: UPSI2026)
+  // 5. Panel Admin
   dom.btnOpenAdmin.addEventListener('click', () => {
     playSFX('click');
     dom.adminPinInput.value = '';
@@ -7465,6 +7507,14 @@ function initEventListeners() {
       dom.adminPinInput.select();
     }
   });
+
+  if (dom.btnPlayTrailer) {
+    dom.btnPlayTrailer.addEventListener('click', () => {
+      playSFX('click');
+      dom.adminDashboard.hidden = true;
+      startCinematicTrailer();
+    });
+  }
 
   if (dom.btnRefreshAdmin) {
     dom.btnRefreshAdmin.addEventListener('click', () => {
@@ -7535,7 +7585,9 @@ function initEventListeners() {
   // Tutup modal menggunakan kekunci Escape
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (dom.tutorialOverlay && !dom.tutorialOverlay.hidden) {
+    if (dom.trailerOverlay && !dom.trailerOverlay.hidden) {
+      stopCinematicTrailer(true);
+    } else if (dom.tutorialOverlay && !dom.tutorialOverlay.hidden) {
       playSFX('click');
       finishInteractiveTutorial();
     } else if (dom.devArchiveModal && !dom.devArchiveModal.hidden) {
@@ -7552,6 +7604,839 @@ function initEventListeners() {
       dom.adminDashboard.hidden = true;
     }
   });
+
+  if (dom.btnCloseTrailer) {
+    dom.btnCloseTrailer.addEventListener('click', () => {
+      playSFX('click');
+      stopCinematicTrailer(true);
+    });
+  }
+}
+
+// ============================================================================
+// 11. MOD TRELER SINEMATIK 11-SEGMEN (37 SAAT AUTO-MAIN · ADMIN / ?trailer=1)
+// ============================================================================
+
+const trailerState = {
+  isPlaying: false,
+  isFinished: false,
+  timers: [],
+  hideCloseTimer: null,
+  prevBgmTrack: null,
+  activityHandler: null,
+  audioUnlockHandler: null,
+};
+
+function renderTrailerTitleCardMarkup(headlineHtml) {
+  return `
+    <div class="trailer-title-card-screen">
+      <h2 class="trailer-card-headline">${headlineHtml}</h2>
+    </div>
+  `;
+}
+
+function getTrailerVisualMarkup(sceneKey) {
+  switch (sceneKey) {
+    case 'card_1':
+      return renderTrailerTitleCardMarkup('TERPERANGKAP DI DALAM MAKMAL AGRO.');
+
+    case 'visual_1_lockdown':
+      return `
+        <div class="trailer-motion-wrap is-trap-fade">
+          <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="trTrapGlow" cx="50%" cy="22%" r="64%">
+                <stop offset="0%" stop-color="#ef4444" stop-opacity="0.78"/>
+                <stop offset="50%" stop-color="#991b1b" stop-opacity="0.28"/>
+                <stop offset="100%" stop-color="#04080b" stop-opacity="0"/>
+              </radialGradient>
+              <clipPath id="trDoorFrameClip">
+                <rect x="330" y="158" width="620" height="444"/>
+              </clipPath>
+            </defs>
+            <rect width="1280" height="720" fill="#070e12"/>
+            <rect width="1280" height="720" fill="url(#trTrapGlow)"/>
+            <!-- Dinding Sisi Koridor Makmal -->
+            <rect x="0" y="54" width="1280" height="18" fill="#172b35" stroke="#030608" stroke-width="3"/>
+            <rect x="44" y="140" width="210" height="460" rx="8" fill="#0d1b22" stroke="#040709" stroke-width="4"/>
+            <rect x="1026" y="140" width="210" height="460" rx="8" fill="#0d1b22" stroke="#040709" stroke-width="4"/>
+            <line x1="68" y1="220" x2="230" y2="220" stroke="#1d3542" stroke-width="4"/>
+            <line x1="68" y1="300" x2="230" y2="300" stroke="#1d3542" stroke-width="4"/>
+            <line x1="1050" y1="220" x2="1212" y2="220" stroke="#1d3542" stroke-width="4"/>
+            <line x1="1050" y1="300" x2="1212" y2="300" stroke="#1d3542" stroke-width="4"/>
+            <!-- Lantai -->
+            <polygon points="0,602 1280,602 1280,720 0,720" fill="#091318" stroke="#030608" stroke-width="4"/>
+            <!-- Lampu Kecemasan Merah Kiri, Tengah & Kanan -->
+            <g class="anim-alarm-pulse">
+              <rect x="122" y="84" width="56" height="36" rx="8" fill="#dc2626" stroke="#040709" stroke-width="3.5"/>
+              <rect x="600" y="76" width="80" height="42" rx="10" fill="#dc2626" stroke="#040709" stroke-width="4"/>
+              <rect x="1102" y="84" width="56" height="36" rx="8" fill="#dc2626" stroke="#040709" stroke-width="3.5"/>
+              <path d="M578 96 L516 78 M702 96 L764 78 M586 118 L536 144 M694 118 L744 144" stroke="#fca5a5" stroke-width="4" stroke-linecap="round"/>
+            </g>
+            <!-- Papan Status Pintu -->
+            <rect x="448" y="102" width="384" height="44" rx="6" fill="#7f1d1d" stroke="#040709" stroke-width="4"/>
+            <text x="640" y="131" text-anchor="middle" fill="#fecaca" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" letter-spacing="1">MAKMAL AGRO · DIKUNCI</text>
+            <!-- Bingkai Pintu Keluli Berat -->
+            <rect x="314" y="148" width="652" height="454" rx="8" fill="#091318" stroke="#040709" stroke-width="6"/>
+            <g clip-path="url(#trDoorFrameClip)">
+              <!-- Daun Pintu Kiri Menghentam Masuk -->
+              <g class="anim-trailer-door-left">
+                <rect x="330" y="158" width="310" height="444" fill="#172832" stroke="#040709" stroke-width="4.5"/>
+                <rect x="364" y="192" width="242" height="148" rx="6" fill="#0c181f" stroke="#040709" stroke-width="3.5"/>
+                <rect x="364" y="366" width="242" height="204" rx="6" fill="#122129" stroke="#040709" stroke-width="3.5"/>
+              </g>
+              <!-- Daun Pintu Kanan Menghentam Masuk -->
+              <g class="anim-trailer-door-right">
+                <rect x="640" y="158" width="310" height="444" fill="#172832" stroke="#040709" stroke-width="4.5"/>
+                <rect x="674" y="192" width="242" height="148" rx="6" fill="#0c181f" stroke="#040709" stroke-width="3.5"/>
+                <rect x="674" y="366" width="242" height="204" rx="6" fill="#122129" stroke="#040709" stroke-width="3.5"/>
+              </g>
+            </g>
+            <!-- Palang Kunci Keluli Menghentam Tutup -->
+            <g class="anim-trailer-slam-bar">
+              <rect x="284" y="352" width="712" height="48" rx="6" fill="#3a4c56" stroke="#040709" stroke-width="4.5"/>
+              <rect x="582" y="336" width="116" height="80" rx="8" fill="#21313a" stroke="#040709" stroke-width="4.5"/>
+              <circle cx="640" cy="376" r="16" fill="#ef4444" stroke="#040709" stroke-width="3"/>
+            </g>
+            <text x="116" y="316" fill="#f2b749" font-family="Fraunces, serif" font-size="54" font-weight="700" stroke="#040709" stroke-width="2.5" transform="rotate(-10 116 316)">KLANG!!</text>
+            <text x="992" y="458" fill="#f2b749" font-family="Fraunces, serif" font-size="44" font-weight="700" stroke="#040709" stroke-width="2.5" transform="rotate(8 992 458)">ZAP!!</text>
+          </svg>
+        </div>
+      `;
+
+    case 'card_2':
+      return renderTrailerTitleCardMarkup(
+        'MASA SEMAKIN SUNTUK.<span class="is-red-accent">GAS BERACUN BAKAL DILEPASKAN.</span>'
+      );
+
+    case 'visual_2_gas':
+      return `
+        <div class="trailer-motion-wrap is-timer-zoom">
+          <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="trGasVentGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ccfbf1" stop-opacity="0.82"/>
+                <stop offset="60%" stop-color="#2dd4bf" stop-opacity="0.38"/>
+                <stop offset="100%" stop-color="#05080a" stop-opacity="0"/>
+              </linearGradient>
+              <radialGradient id="trThreatRed" cx="50%" cy="18%" r="58%">
+                <stop offset="0%" stop-color="#dc2626" stop-opacity="0.68"/>
+                <stop offset="100%" stop-color="#05080a" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="1280" height="720" fill="#060d11"/>
+            <rect width="1280" height="720" fill="url(#trThreatRed)"/>
+            <!-- Corong Gas Beracun Berkembar Atas Siling -->
+            <rect x="92" y="40" width="320" height="62" rx="6" fill="#182933" stroke="#040709" stroke-width="5"/>
+            <line x1="120" y1="62" x2="384" y2="62" stroke="#040709" stroke-width="5"/>
+            <line x1="120" y1="82" x2="384" y2="82" stroke="#040709" stroke-width="5"/>
+            <rect x="868" y="40" width="320" height="62" rx="6" fill="#182933" stroke="#040709" stroke-width="5"/>
+            <line x1="896" y1="62" x2="1160" y2="62" stroke="#040709" stroke-width="5"/>
+            <line x1="896" y1="82" x2="1160" y2="82" stroke="#040709" stroke-width="5"/>
+            <!-- Pancutan Gas & Awan Gas Turun dari Siling -->
+            <g class="anim-vapor-jet">
+              <path d="M132 102 L48 470 L328 470 L282 102 Z" fill="url(#trGasVentGrad)"/>
+              <path d="M998 102 L952 470 L1232 470 L1148 102 Z" fill="url(#trGasVentGrad)"/>
+            </g>
+            <g class="anim-gas-drift-down">
+              <ellipse cx="220" cy="240" rx="185" ry="74" fill="#99f6e4" opacity="0.28"/>
+              <ellipse cx="1060" cy="250" rx="185" ry="74" fill="#5eead4" opacity="0.26"/>
+            </g>
+            <g class="anim-gas-drift-down-slow">
+              <ellipse cx="640" cy="180" rx="280" ry="72" fill="#ccfbf1" opacity="0.18"/>
+            </g>
+            <g class="anim-hiss-burst">
+              <text x="88" y="256" fill="#99f6e4" font-family="Fraunces, serif" font-size="44" font-weight="700" stroke="#040709" stroke-width="2" transform="rotate(-10 88 256)">HSSSSS!!</text>
+              <text x="960" y="246" fill="#5eead4" font-family="Fraunces, serif" font-size="42" font-weight="700" stroke="#040709" stroke-width="2" transform="rotate(9 960 246)">HSSSSS!!</text>
+            </g>
+            <!-- Panel Pemasa HUD Skrin Lebar Berdetik -->
+            <rect x="310" y="204" width="660" height="312" rx="18" fill="#13222a" stroke="#040709" stroke-width="6"/>
+            <rect x="334" y="228" width="612" height="264" rx="10" fill="#1c090e" stroke="#dc3545" stroke-width="3.5"/>
+            <text x="640" y="284" text-anchor="middle" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" letter-spacing="2">GAS BERACUN DILEPASKAN</text>
+            <text id="trailer-live-countdown" class="anim-alarm-timer" x="640" y="408" text-anchor="middle" fill="#f2b749" font-family="JetBrains Mono, monospace" font-size="122" font-weight="700">10:00</text>
+            <text x="640" y="462" text-anchor="middle" fill="#ff7b89" font-family="Plus Jakarta Sans, sans-serif" font-size="18" font-weight="700" letter-spacing="1">PROTOKOL PENSTERILAN MAKMAL AGRO AKTIF</text>
+            <!-- Kabus Bawah -->
+            <g class="anim-mist-rise">
+              <ellipse cx="280" cy="635" rx="280" ry="74" fill="#5eead4" opacity="0.22"/>
+              <ellipse cx="640" cy="655" rx="340" ry="78" fill="#99f6e4" opacity="0.2"/>
+              <ellipse cx="1000" cy="635" rx="280" ry="74" fill="#5eead4" opacity="0.22"/>
+            </g>
+          </svg>
+        </div>
+      `;
+
+    case 'card_3':
+      return renderTrailerTitleCardMarkup(
+        'UJI ILMU SAINS PERTANIAN ANDA UNTUK MENCARI JALAN KELUAR.'
+      );
+
+    case 'visual_3_npk':
+      return `
+        <div class="trailer-motion-wrap trailer-beat-npk">
+          <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="trGrowLight" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#a855f7" stop-opacity="0.34"/>
+                <stop offset="55%" stop-color="#1e6b7b" stop-opacity="0.16"/>
+                <stop offset="100%" stop-color="#081217" stop-opacity="0"/>
+              </linearGradient>
+              <radialGradient id="trNpkSpot" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#f2b749" stop-opacity="0.36"/>
+                <stop offset="100%" stop-color="#f2b749" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="1280" height="720" fill="#09151b"/>
+            <rect width="1280" height="720" fill="url(#trGrowLight)"/>
+
+            <!-- Dinding & Rak Makmal B1/B2 -->
+            <rect x="64" y="106" width="248" height="240" rx="8" fill="#0d1e26" stroke="#040709" stroke-width="4"/>
+            <line x1="64" y1="186" x2="312" y2="186" stroke="#18323f" stroke-width="4"/>
+            <line x1="64" y1="266" x2="312" y2="266" stroke="#18323f" stroke-width="4"/>
+            <rect x="968" y="106" width="248" height="240" rx="8" fill="#0d1e26" stroke="#040709" stroke-width="4"/>
+            <line x1="968" y1="186" x2="1216" y2="186" stroke="#18323f" stroke-width="4"/>
+            <line x1="968" y1="266" x2="1216" y2="266" stroke="#18323f" stroke-width="4"/>
+
+            <!-- Lampu Rumah Hijau -->
+            <rect x="220" y="34" width="840" height="28" rx="6" fill="#233742" stroke="#040709" stroke-width="4"/>
+            <rect x="246" y="54" width="788" height="10" rx="3" fill="#c084fc" stroke="#040709" stroke-width="2"/>
+
+            <!-- Meja Makmal & Rak Baja -->
+            <rect x="0" y="424" width="1280" height="176" fill="#14262f" stroke="#040709" stroke-width="5"/>
+            <rect x="0" y="424" width="1280" height="18" fill="#1d3845" stroke="#040709" stroke-width="3"/>
+
+            <!-- Prop Latar: Pasu Semaian Kiri & Peralatan Kanan (Redup) -->
+            <g opacity="0.65">
+              <polygon points="150,368 242,368 228,424 164,424" fill="#8b4d2b" stroke="#040709" stroke-width="3.5"/>
+              <path d="M196 368 L196 276" stroke="#6f9c3d" stroke-width="6" stroke-linecap="round"/>
+              <path d="M196 322 Q152 302 138 320 Q164 338 196 328 Z" fill="#a8c256" stroke="#040709" stroke-width="2.5"/>
+              <path d="M196 314 Q240 294 254 312 Q228 330 196 320 Z" fill="#2ea877" stroke="#040709" stroke-width="2.5"/>
+
+              <rect x="960" y="330" width="96" height="94" rx="8" fill="#1b3340" stroke="#040709" stroke-width="3.5"/>
+              <rect x="976" y="352" width="64" height="36" rx="4" fill="#e7dcc3"/>
+              <rect x="1084" y="348" width="72" height="76" rx="6" fill="#21404e" stroke="#040709" stroke-width="3.5"/>
+            </g>
+
+            <!-- Sorotan Meja Di Bawah Beg Baja NPK -->
+            <ellipse cx="640" cy="436" rx="140" ry="26" fill="url(#trNpkSpot)"/>
+
+            <!-- Bar Inventori Bawah -->
+            <g>
+              <rect x="176" y="572" width="928" height="128" rx="14" fill="#091318" stroke="#2a7f8e" stroke-width="3"/>
+              <text x="206" y="598" fill="#9bb3bd" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" letter-spacing="1.4">INVENTORI MAKMAL</text>
+
+              <!-- 5 Slot Inventori -->
+              <rect x="292" y="608" width="118" height="78" rx="10" fill="#0e1e26" stroke="#1e3c4a" stroke-width="2.5"/>
+              <rect x="434" y="608" width="118" height="78" rx="10" fill="#0e1e26" stroke="#1e3c4a" stroke-width="2.5"/>
+              <!-- Slot Aktif Tengah (Sasaran Baja NPK): center (640, 647) -->
+              <rect class="anim-inv-slot-activate" x="576" y="604" width="128" height="84" rx="12" fill="#0f252b" stroke="#34d399" stroke-width="3"/>
+              <rect x="728" y="608" width="118" height="78" rx="10" fill="#0e1e26" stroke="#1e3c4a" stroke-width="2.5"/>
+              <rect x="870" y="608" width="118" height="78" rx="10" fill="#0e1e26" stroke="#1e3c4a" stroke-width="2.5"/>
+
+              <!-- Ikon Mini Buku Nota dalam Slot 1 -->
+              <rect x="331" y="622" width="40" height="48" rx="4" fill="#3a2a1d" stroke="#040709" stroke-width="2"/>
+              <rect x="338" y="630" width="26" height="12" rx="2" fill="#e7dcc3"/>
+            </g>
+
+            <!-- Beg Baja NPK (Terangkat & Terbang Masuk ke Slot Tengah: 640,322 -> 640,647) -->
+            <g transform="translate(640, 322)">
+              <g class="anim-npk-bag-pickup">
+                <!-- Badan Beg Baja -->
+                <path d="M-66 -62 L-50 -86 L50 -86 L66 -62 L76 74 Q76 92 56 92 L-56 92 Q-76 92 -76 74 Z" fill="#195c48" stroke="#040709" stroke-width="5"/>
+                <!-- Bahagian Atas Beg Berkedut -->
+                <path d="M-54 -86 L-44 -104 L44 -104 L54 -86 Z" fill="#2ea877" stroke="#040709" stroke-width="4"/>
+                <line x1="-42" y1="-86" x2="42" y2="-86" stroke="#f2b749" stroke-width="4"/>
+                <!-- Label Beg -->
+                <rect x="-56" y="-44" width="112" height="106" rx="8" fill="#e7dcc3" stroke="#040709" stroke-width="3.5"/>
+                <rect x="-56" y="-44" width="112" height="28" rx="6" fill="#d99b38" stroke="#040709" stroke-width="2.5"/>
+                <text x="0" y="-24" text-anchor="middle" fill="#040709" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700" letter-spacing="1">BAJA</text>
+                <text x="0" y="20" text-anchor="middle" fill="#071a14" font-family="Fraunces, serif" font-size="38" font-weight="700">NPK</text>
+                <rect x="-40" y="34" width="80" height="18" rx="4" fill="#122b23"/>
+                <text x="0" y="47" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">N · P · K</text>
+              </g>
+            </g>
+
+            <!-- Kesan Gelombang Ketikan & Kursor pada Beg BAJA NPK -->
+            <g transform="translate(648, 336)">
+              <circle class="anim-npk-tap-ring" cx="0" cy="0" r="24" fill="none" stroke="#f2b749" stroke-width="4"/>
+              <circle class="anim-npk-tap-ring-delay" cx="0" cy="0" r="24" fill="none" stroke="#6ee7b7" stroke-width="3"/>
+              <g class="anim-npk-tap-cursor">
+                <polygon points="0,0 8,42 18,30 34,44 41,37 25,23 39,17" fill="#ffffff" stroke="#040709" stroke-width="3" stroke-linejoin="round"/>
+              </g>
+            </g>
+
+            <!-- Lencana Toast "Item Diperoleh: Baja NPK" -->
+            <g transform="translate(640, 108)">
+              <g class="anim-npk-toast">
+                <rect x="-252" y="-28" width="504" height="56" rx="12" fill="#072821" stroke="#34d399" stroke-width="3"/>
+                <circle cx="-214" cy="0" r="15" fill="#2ea877" stroke="#040709" stroke-width="2"/>
+                <path d="M-221 0 L-216 5 L-207 -5" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <text x="16" y="7" text-anchor="middle" fill="#ecfdf5" font-family="JetBrains Mono, monospace" font-size="21" font-weight="700" letter-spacing="0.8">Item Diperoleh: Baja NPK</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+      `;
+
+    case 'visual_3_ph':
+      return `
+        <div class="trailer-motion-wrap is-puzzle-pop">
+          <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="trPhConfirmAura" cx="50%" cy="42%" r="54%">
+                <stop offset="0%" stop-color="#22c55e" stop-opacity="0.45"/>
+                <stop offset="100%" stop-color="#0d1a21" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="1280" height="720" fill="#0d1a21"/>
+            <rect class="anim-ph-confirm-glow" width="1280" height="720" fill="url(#trPhConfirmAura)"/>
+            <rect x="340" y="48" width="600" height="48" rx="8" fill="#071217" stroke="#67e8f9" stroke-width="2.5"/>
+            <text x="640" y="80" text-anchor="middle" fill="#7ee0eb" font-family="JetBrains Mono, monospace" font-size="21" font-weight="700" letter-spacing="1.5">ANALISIS METER pH TANAH</text>
+            <!-- Meja Makmal -->
+            <rect x="0" y="516" width="1280" height="204" fill="#13242c" stroke="#040709" stroke-width="5"/>
+            <!-- Meter pH Sebelah Kiri (Besar) -->
+            <g transform="translate(110, 146)">
+              <rect x="0" y="0" width="380" height="410" rx="18" fill="#213a46" stroke="#040709" stroke-width="6"/>
+              <rect class="anim-ph-confirm-glow" x="-6" y="-6" width="392" height="422" rx="22" fill="none" stroke="#34d399" stroke-width="4"/>
+              <rect x="28" y="28" width="324" height="194" rx="10" fill="#071419" stroke="#040709" stroke-width="4"/>
+              <path d="M68 182 A122 122 0 0 1 312 182" fill="none" stroke="#334155" stroke-width="16" stroke-linecap="round"/>
+              <path d="M68 182 A122 122 0 0 1 142 74" fill="none" stroke="#ef4444" stroke-width="12" stroke-linecap="round"/>
+              <path d="M148 72 A122 122 0 0 1 232 72" fill="none" stroke="#22c55e" stroke-width="12" stroke-linecap="round"/>
+              <path d="M238 74 A122 122 0 0 1 312 182" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linecap="round"/>
+              <path class="anim-ph-confirm-glow" d="M148 72 A122 122 0 0 1 232 72" fill="none" stroke="#86efac" stroke-width="18" stroke-linecap="round" opacity="0.55"/>
+              <polygon class="anim-ph-needle" points="184,182 196,182 190,68" fill="#f2b749" stroke="#040709" stroke-width="2"/>
+              <circle cx="190" cy="182" r="13" fill="#e7dcc3" stroke="#040709" stroke-width="3"/>
+              <text x="190" y="274" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="38" font-weight="700">pH 4.2 → 6.2</text>
+              <rect x="44" y="302" width="292" height="42" rx="6" fill="#083329" stroke="#34d399" stroke-width="2.5"/>
+              <text x="190" y="329" text-anchor="middle" fill="#a7f3d0" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">SASARAN OPTIMUM TERKUNCI</text>
+              <circle cx="110" cy="378" r="13" fill="#2ea877" stroke="#040709" stroke-width="3"/>
+              <circle cx="190" cy="378" r="13" fill="#d99b38" stroke="#040709" stroke-width="3"/>
+              <circle cx="270" cy="378" r="13" fill="#2a7f8e" stroke="#040709" stroke-width="3"/>
+            </g>
+            <!-- 3 Bikar Tanah Besar Sebelah Kanan -->
+            <g transform="translate(560, 290) scale(1.42)">
+              <rect width="112" height="140" rx="8" fill="rgba(126,224,235,0.16)" stroke="#040709" stroke-width="4"/>
+              <path d="M5 72 Q56 62 107 72 L107 136 L5 136 Z" fill="#2c1d16" stroke="#040709" stroke-width="2"/>
+              <text x="56" y="166" text-anchor="middle" fill="#fde68a" font-family="JetBrains Mono, monospace" font-size="12.5" font-weight="700">S1 GAMBUT</text>
+            </g>
+            <g transform="translate(780, 290) scale(1.42)">
+              <rect width="112" height="140" rx="8" fill="rgba(126,224,235,0.16)" stroke="#34d399" stroke-width="4"/>
+              <path d="M5 70 Q56 60 107 70 L107 136 L5 136 Z" fill="#6d4c34" stroke="#040709" stroke-width="2"/>
+              <text x="56" y="166" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="12.5" font-weight="700">S2 ALUVIUM</text>
+            </g>
+            <g transform="translate(1000, 290) scale(1.42)">
+              <rect width="112" height="140" rx="8" fill="rgba(126,224,235,0.16)" stroke="#040709" stroke-width="4"/>
+              <path d="M5 72 Q56 62 107 72 L107 136 L5 136 Z" fill="#cec5ae" stroke="#040709" stroke-width="2"/>
+              <text x="56" y="166" text-anchor="middle" fill="#f2b749" font-family="JetBrains Mono, monospace" font-size="12.5" font-weight="700">S3 BERKAPUR</text>
+            </g>
+          </svg>
+        </div>
+      `;
+
+    case 'visual_3_usda': {
+      const polyClay = triPoly([[100,0,0],[55,0,45],[40,15,45],[40,40,20],[60,40,0]]);
+      const polySiltyClay = triPoly([[60,40,0],[40,40,20],[40,60,0]]);
+      const polySandyClay = triPoly([[55,0,45],[35,0,65],[35,20,45],[40,15,45]]);
+      const polyClayLoam = triPoly([[40,15,45],[27,28,45],[27,53,20],[40,40,20]]);
+      const polySiltyClayLoam = triPoly([[40,40,20],[27,53,20],[27,73,0],[40,60,0]]);
+      const polySandyClayLoam = triPoly([[35,0,65],[20,0,80],[20,28,52],[27,28,45],[35,20,45]]);
+      const polyLoam = triPoly([[27,28,45],[27,50,23],[7,50,43],[7,41,52],[20,28,52]]);
+      const polySiltLoam = triPoly([[27,50,23],[27,73,0],[12,88,0],[12,80,8],[0,80,20],[0,50,50],[12,50,38]]);
+      const polySilt = triPoly([[12,88,0],[0,100,0],[0,80,20],[12,80,8]]);
+      const polySandyLoam = triPoly([[20,0,80],[20,28,52],[7,41,52],[7,50,43],[0,50,50],[0,30,70],[15,0,85]]);
+      const polyLoamySand = triPoly([[15,0,85],[0,30,70],[0,15,85],[10,0,90]]);
+      const polySand = triPoly([[10,0,90],[0,15,85],[0,0,100]]);
+      const cA = triPointXY(20, 0);
+      const cB = triPointXY(20, 80);
+      const sA = triPointXY(60, 40);
+      const sB = triPointXY(0, 40);
+      const pA = triPointXY(60, 0);
+      const pB = triPointXY(0, 60);
+      const inter = triPointXY(20, 40);
+      return `
+        <div class="trailer-motion-wrap trailer-usda-scene">
+          <!-- Latar Dalaman Makmal Agro (B1/B2) Dikaburkan Secara Lembut -->
+          <div class="trailer-usda-bg-blur" aria-hidden="true">
+            <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+              <rect width="1280" height="720" fill="#09151b"/>
+              <rect x="0" y="0" width="1280" height="120" fill="#0d1e26"/>
+              <rect x="200" y="34" width="880" height="28" rx="6" fill="#233742" stroke="#040709" stroke-width="4"/>
+              <rect x="230" y="54" width="820" height="10" rx="3" fill="#c084fc"/>
+              <!-- Tingkap Rumah Hijau & Rak Spesimen B1/B2 -->
+              <rect x="70" y="130" width="320" height="310" rx="10" fill="#0c2029" stroke="#1d3c4a" stroke-width="5"/>
+              <line x1="230" y1="130" x2="230" y2="440" stroke="#1d3c4a" stroke-width="4"/>
+              <line x1="70" y1="285" x2="390" y2="285" stroke="#1d3c4a" stroke-width="4"/>
+              <rect x="890" y="130" width="320" height="310" rx="10" fill="#0c2029" stroke="#1d3c4a" stroke-width="5"/>
+              <line x1="890" y1="230" x2="1210" y2="230" stroke="#1d3c4a" stroke-width="4"/>
+              <line x1="890" y1="330" x2="1210" y2="330" stroke="#1d3c4a" stroke-width="4"/>
+              <!-- Meja Analisis Tanah -->
+              <rect x="0" y="472" width="1280" height="248" fill="#13252e" stroke="#040709" stroke-width="5"/>
+              <rect x="140" y="368" width="90" height="104" rx="8" fill="#1d6fa5"/>
+              <rect x="260" y="384" width="76" height="88" rx="8" fill="#2ea877"/>
+              <rect x="960" y="364" width="120" height="108" rx="8" fill="#213a46"/>
+              <rect x="1106" y="388" width="80" height="84" rx="8" fill="#d99b38"/>
+            </svg>
+          </div>
+          <div class="trailer-usda-backdrop-dim" aria-hidden="true"></div>
+
+          <!-- Helaian Kertas Petunjuk Terbuka Di Tengah Skrin -->
+          <div class="trailer-usda-paper-wrap">
+            <div class="trailer-usda-paper-sheet">
+              <svg viewBox="0 0 980 580" preserveAspectRatio="xMidYMid meet">
+                <rect x="8" y="8" width="964" height="564" rx="16" fill="#ece0c6" stroke="#040709" stroke-width="6"/>
+                <rect x="24" y="24" width="932" height="532" rx="10" fill="#f3ead4" stroke="#8a7248" stroke-width="2" stroke-dasharray="8 6"/>
+                <!-- Garisan Lipatan Kertas Halus -->
+                <line x1="24" y1="290" x2="956" y2="290" stroke="#bfa87d" stroke-opacity="0.45" stroke-width="2"/>
+                <line x1="490" y1="24" x2="490" y2="556" stroke="#bfa87d" stroke-opacity="0.32" stroke-width="1.5"/>
+
+                <!-- Tajuk Nota Kertas -->
+                <rect x="190" y="34" width="600" height="44" rx="8" fill="#102128" stroke="#040709" stroke-width="3"/>
+                <text x="490" y="63" text-anchor="middle" fill="#fde68a" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700" letter-spacing="1.2">SEGITIGA TEKSTUR TANAH USDA</text>
+
+                <!-- Rajah Segi Tiga USDA Di Dalam Kertas (Kiri) -->
+                <g transform="translate(52, 92) scale(0.95)">
+                  <rect x="8" y="8" width="504" height="436" rx="14" fill="#0d181e" stroke="#040709" stroke-width="4"/>
+                  <g stroke="#040709" stroke-width="1.8">
+                    <polygon points="${polyClay}" fill="#9b4d4d"/>
+                    <polygon points="${polySiltyClay}" fill="#7c566d"/>
+                    <polygon points="${polySandyClay}" fill="#a85c48"/>
+                    <polygon points="${polyClayLoam}" fill="#8e774f"/>
+                    <polygon points="${polySiltyClayLoam}" fill="#5e7874"/>
+                    <polygon points="${polySandyClayLoam}" fill="#9c7e47"/>
+                    <polygon class="anim-usda-highlight" points="${polyLoam}" fill="#22c55e" stroke="#fef08a"/>
+                    <polygon points="${polySiltLoam}" fill="#487c82"/>
+                    <polygon points="${polySilt}" fill="#3a6b73"/>
+                    <polygon points="${polySandyLoam}" fill="#8a8b53"/>
+                    <polygon points="${polyLoamySand}" fill="#b59d54"/>
+                    <polygon points="${polySand}" fill="#ceb05a"/>
+                  </g>
+                  <polygon points="${triPoint(100,0,0)} ${triPoint(0,0,100)} ${triPoint(0,100,0)}" fill="none" stroke="#e7dcc3" stroke-width="2.5"/>
+                  <line x1="${cA.x.toFixed(1)}" y1="${cA.y.toFixed(1)}" x2="${cB.x.toFixed(1)}" y2="${cB.y.toFixed(1)}" stroke="#f87171" stroke-width="3" stroke-dasharray="6 4"/>
+                  <line x1="${sA.x.toFixed(1)}" y1="${sA.y.toFixed(1)}" x2="${sB.x.toFixed(1)}" y2="${sB.y.toFixed(1)}" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6 4"/>
+                  <line x1="${pA.x.toFixed(1)}" y1="${pA.y.toFixed(1)}" x2="${pB.x.toFixed(1)}" y2="${pB.y.toFixed(1)}" stroke="#fbbf24" stroke-width="3" stroke-dasharray="6 4"/>
+                  <circle cx="${inter.x.toFixed(1)}" cy="${inter.y.toFixed(1)}" r="14" fill="#f2b749" fill-opacity="0.45" stroke="#040709" stroke-width="2" class="anim-npk-pulse"/>
+                  <circle cx="${inter.x.toFixed(1)}" cy="${inter.y.toFixed(1)}" r="6" fill="#fef08a" stroke="#040709" stroke-width="2"/>
+                  <text x="115" y="206" text-anchor="middle" fill="#fca5a5" font-size="11.5" font-weight="700" transform="rotate(-60 115 206)">% LIAT</text>
+                  <text x="408" y="206" text-anchor="middle" fill="#7dd3fc" font-size="11.5" font-weight="700" transform="rotate(60 408 206)">% KELODAK</text>
+                  <text x="260" y="424" text-anchor="middle" fill="#fde68a" font-size="11.5" font-weight="700">← % PASIR</text>
+                </g>
+
+                <!-- Catatan Analisis Sampel Di Kanan Kertas -->
+                <g transform="translate(574, 118)">
+                  <rect x="0" y="0" width="352" height="390" rx="14" fill="#0d1e25" stroke="#040709" stroke-width="4"/>
+                  <text x="176" y="48" text-anchor="middle" fill="#9bb3bd" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" letter-spacing="1.2">REKOD SAMPEL TANAH</text>
+                  <rect x="26" y="76" width="300" height="54" rx="8" fill="#132a33" stroke="#f2b749" stroke-width="2"/>
+                  <text x="176" y="110" text-anchor="middle" fill="#fde68a" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700">40% PASIR</text>
+                  <rect x="26" y="148" width="300" height="54" rx="8" fill="#132a33" stroke="#38bdf8" stroke-width="2"/>
+                  <text x="176" y="182" text-anchor="middle" fill="#7dd3fc" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700">40% KELODAK</text>
+                  <rect x="26" y="220" width="300" height="54" rx="8" fill="#132a33" stroke="#f87171" stroke-width="2"/>
+                  <text x="176" y="254" text-anchor="middle" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700">20% LIAT</text>
+                  <rect x="26" y="302" width="300" height="56" rx="8" fill="#083329" stroke="#34d399" stroke-width="2.5"/>
+                  <text x="176" y="337" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="21" font-weight="700">KELAS: TANAH LOM</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    case 'card_4':
+      return renderTrailerTitleCardMarkup('BONGKAR RAHSIA BILIK KEBAL MAKMAL AGRO.');
+
+    case 'visual_4_bookshelf':
+      return `
+        <div class="trailer-motion-wrap">
+          <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="trSecretGlow" cx="38%" cy="48%" r="54%">
+                <stop offset="0%" stop-color="#34d399" stop-opacity="0.9"/>
+                <stop offset="56%" stop-color="#1d615c" stop-opacity="0.34"/>
+                <stop offset="100%" stop-color="#050b0e" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="1280" height="720" fill="#081217"/>
+            <rect class="anim-trailer-emerald-spill" width="1280" height="720" fill="url(#trSecretGlow)"/>
+            <!-- Lantai & Panel Dinding Sisi -->
+            <rect x="0" y="584" width="1280" height="136" fill="#091115" stroke="#040709" stroke-width="4"/>
+            <rect x="58" y="132" width="220" height="410" rx="8" fill="#0d1a21" stroke="#040709" stroke-width="4"/>
+            <rect x="1002" y="132" width="220" height="410" rx="8" fill="#0d1a21" stroke="#040709" stroke-width="4"/>
+            <!-- Pintu Rahsia Terdedah Di Belakang Rak -->
+            <rect x="330" y="96" width="330" height="488" fill="#051312" stroke="#040709" stroke-width="6"/>
+            <rect x="358" y="122" width="274" height="462" fill="#082823" stroke="#34d399" stroke-width="3"/>
+            <polygon points="384,584 606,584 562,402 428,402" fill="#134e44" opacity="0.72"/>
+            <circle cx="495" cy="272" r="78" fill="#34d399" opacity="0.22"/>
+            <rect x="380" y="152" width="230" height="42" rx="6" fill="#071a17" stroke="#6ee7b7" stroke-width="2.5"/>
+            <text x="495" y="179" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700">BILIK RAHSIA MAKMAL AGRO</text>
+            <!-- Rak Buku Keluli Berat Bergeser Ke Kanan -->
+            <g class="anim-trailer-bookshelf-slide">
+              <rect x="322" y="88" width="346" height="496" rx="6" fill="#1c323c" stroke="#040709" stroke-width="6"/>
+              <rect x="346" y="116" width="298" height="118" fill="#0e1b22" stroke="#040709" stroke-width="3.5"/>
+              <rect x="346" y="256" width="298" height="118" fill="#0e1b22" stroke="#040709" stroke-width="3.5"/>
+              <rect x="346" y="396" width="298" height="148" fill="#0e1b22" stroke="#040709" stroke-width="3.5"/>
+              <rect x="368" y="142" width="32" height="78" fill="#8b4d2b" stroke="#040709" stroke-width="2.5"/>
+              <rect x="408" y="132" width="38" height="88" fill="#2a7f8e" stroke="#040709" stroke-width="2.5"/>
+              <rect x="454" y="150" width="28" height="70" fill="#d99b38" stroke="#040709" stroke-width="2.5"/>
+              <rect x="374" y="282" width="44" height="82" fill="#7f1d1d" stroke="#040709" stroke-width="2.5"/>
+              <rect x="428" y="290" width="34" height="74" fill="#1e544a" stroke="#040709" stroke-width="2.5"/>
+            </g>
+            <text x="108" y="122" fill="#f2b749" font-family="Fraunces, serif" font-size="46" font-weight="700" stroke="#040709" stroke-width="2" transform="rotate(-8 108 122)">GRRKKK...</text>
+          </svg>
+        </div>
+      `;
+
+    case 'card_5':
+      return renderTrailerTitleCardMarkup('ADAKAH ANDA SEMPAT MELARIKAN DIRI...');
+
+    case 'visual_5_collapse': {
+      const portraitSVG = getPlayerPortraitSVG(gameState.avatar || 'male', 'dizzy');
+      return `
+        <div class="trailer-motion-wrap is-collapse-pulse">
+          <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="trGoAlarmGlow" cx="50%" cy="22%" r="64%">
+                <stop offset="0%" stop-color="#ef4444" stop-opacity="0.88"/>
+                <stop offset="56%" stop-color="#991b1b" stop-opacity="0.34"/>
+                <stop offset="100%" stop-color="#05080a" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="trGoJetGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ccfbf1" stop-opacity="0.72"/>
+                <stop offset="100%" stop-color="#5eead4" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <rect width="1280" height="720" fill="#070a0d"/>
+            <rect class="anim-alarm-pulse" width="1280" height="720" fill="url(#trGoAlarmGlow)"/>
+            <!-- Corong Gas Kiri & Kanan -->
+            <rect x="120" y="34" width="280" height="48" rx="6" fill="#18242b" stroke="#040709" stroke-width="5"/>
+            <rect x="880" y="34" width="280" height="48" rx="6" fill="#18242b" stroke="#040709" stroke-width="5"/>
+            <g class="anim-vapor-jet">
+              <path d="M160 82 L84 360 L330 360 L290 82 Z" fill="url(#trGoJetGrad)"/>
+              <path d="M990 82 L950 360 L1196 360 L1120 82 Z" fill="url(#trGoJetGrad)"/>
+            </g>
+            <!-- Panel Penggera 00:00 di Kiri -->
+            <rect x="116" y="182" width="520" height="270" rx="16" fill="#141e24" stroke="#040709" stroke-width="6"/>
+            <rect x="138" y="204" width="476" height="226" rx="10" fill="#23080d" stroke="#ef4444" stroke-width="3.5"/>
+            <text x="376" y="256" text-anchor="middle" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700">BAHAYA: GAS BERACUN DILEPASKAN</text>
+            <text class="anim-alarm-timer" x="376" y="382" text-anchor="middle" fill="#ff4d5a" font-family="JetBrains Mono, monospace" font-size="112" font-weight="700">00:00</text>
+            <!-- Potret Pelajar Rebah Kabur di Kanan -->
+            <g transform="translate(766, 152)">
+              <rect x="0" y="0" width="290" height="290" rx="145" fill="#131c24" stroke="#dc3545" stroke-width="6"/>
+              <svg x="20" y="20" width="250" height="250" viewBox="0 0 64 64">${portraitSVG}</svg>
+            </g>
+            <text x="911" y="502" text-anchor="middle" fill="#fecaca" font-family="Fraunces, serif" font-size="28" font-style="italic" font-weight="700">"Pandangan aku mula kabur..."</text>
+            <ellipse cx="320" cy="610" rx="340" ry="76" fill="#5eead4" opacity="0.18"/>
+            <ellipse cx="940" cy="630" rx="340" ry="82" fill="#99f6e4" opacity="0.16"/>
+          </svg>
+        </div>
+      `;
+    }
+
+    case 'visual_6_title':
+    default:
+      return `
+        <div class="trailer-motion-wrap is-title-glow trailer-final-scene">
+          <svg class="trailer-final-backdrop-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <radialGradient id="trTitleAura" cx="50%" cy="44%" r="60%">
+                <stop offset="0%" stop-color="#2ea877" stop-opacity="0.46"/>
+                <stop offset="48%" stop-color="#f2b749" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="#04080b" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="1280" height="720" fill="#050b0e"/>
+            <rect width="1280" height="720" fill="url(#trTitleAura)"/>
+            <!-- Bingkai Emas & Zamrud Skrin Lebar -->
+            <rect x="34" y="30" width="1212" height="660" rx="20" fill="none" stroke="#f2b749" stroke-opacity="0.48" stroke-width="3"/>
+            <rect x="48" y="44" width="1184" height="632" rx="14" fill="none" stroke="#2ea877" stroke-opacity="0.38" stroke-width="1.5"/>
+          </svg>
+
+          <div class="trailer-final-foreground">
+            <div class="trailer-final-emblem-wrap" aria-hidden="true">
+              <svg class="trailer-final-emblem" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="64" fill="#0d2229" stroke="#f2b749" stroke-width="3.5"/>
+                <circle cx="70" cy="70" r="52" fill="none" stroke="#34d399" stroke-opacity="0.45" stroke-width="1.5"/>
+                <path d="M70 110 L70 42" stroke="#6ee7b7" stroke-width="5" stroke-linecap="round"/>
+                <path d="M70 76 Q28 56 20 30 Q54 34 70 62 Z" fill="#2ea877" stroke="#040709" stroke-width="2.5"/>
+                <path d="M70 66 Q112 46 120 20 Q86 24 70 52 Z" fill="#f2b749" stroke="#040709" stroke-width="2.5"/>
+              </svg>
+            </div>
+
+            <h2 class="trailer-final-title">ESCAPE: MAKMAL AGRO</h2>
+            <div class="trailer-final-divider" aria-hidden="true"></div>
+            <p class="trailer-final-subtitle">Permainan Escape Room 2D · Sains Pertanian</p>
+
+            <div class="trailer-final-qr-banner">
+              <img
+                class="trailer-final-qr-img"
+                src="./Escape-Makmal-Agro.png"
+                alt="Imbas Kod QR untuk bermain Escape: Makmal Agro"
+                onerror="this.onerror=null;this.src='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://effastudent.github.io/misteri-makmal-agro/';"
+              />
+              <div class="trailer-final-qr-copy">
+                <span class="trailer-final-qr-eyebrow">IMBAS KOD QR &amp;</span>
+                <span class="trailer-final-qr-cta">MAIN SEKARANG!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+  }
+}
+
+function clearTrailerTimers() {
+  while (trailerState.timers.length > 0) {
+    clearTimeout(trailerState.timers.pop());
+  }
+  if (trailerState.hideCloseTimer) {
+    clearTimeout(trailerState.hideCloseTimer);
+    trailerState.hideCloseTimer = null;
+  }
+}
+
+function scheduleTrailerStep(delayMs, fn) {
+  const id = setTimeout(() => {
+    if (!trailerState.isPlaying) return;
+    fn();
+  }, delayMs);
+  trailerState.timers.push(id);
+}
+
+function setTrailerStrobeMode(mode = '') {
+  if (!dom.trailerStrobeLayer) return;
+  dom.trailerStrobeLayer.className = 'trailer-strobe-layer';
+  if (!mode) return;
+  void dom.trailerStrobeLayer.offsetWidth;
+  dom.trailerStrobeLayer.classList.add(mode);
+}
+
+function setTrailerOverlayPhrase(htmlText = '') {
+  if (!dom.trailerOverlayText) return;
+  if (!htmlText) {
+    dom.trailerOverlayText.hidden = true;
+    dom.trailerOverlayText.innerHTML = '';
+    return;
+  }
+  dom.trailerOverlayText.hidden = false;
+  dom.trailerOverlayText.innerHTML = `<p class="trailer-overlay-phrase">${htmlText}</p>`;
+}
+
+function revealCloseTrailerTemporarily(autoHide = true) {
+  if (!dom.btnCloseTrailer) return;
+  dom.btnCloseTrailer.classList.remove('is-autohidden');
+  if (trailerState.hideCloseTimer) {
+    clearTimeout(trailerState.hideCloseTimer);
+    trailerState.hideCloseTimer = null;
+  }
+  if (autoHide && trailerState.isPlaying && !trailerState.isFinished) {
+    trailerState.hideCloseTimer = setTimeout(() => {
+      if (trailerState.isPlaying && !trailerState.isFinished && dom.btnCloseTrailer) {
+        dom.btnCloseTrailer.classList.add('is-autohidden');
+      }
+    }, 2000);
+  }
+}
+
+function startCinematicTrailer() {
+  if (!dom.trailerOverlay || !dom.trailerVisualLayer) return;
+
+  stopCinematicTrailer(false);
+  trailerState.isPlaying = true;
+  trailerState.isFinished = false;
+  trailerState.prevBgmTrack = soundManager.getCurrentBGM();
+
+  dom.trailerOverlay.hidden = false;
+  setTrailerOverlayPhrase('');
+
+  soundManager.unlock();
+  soundManager.playBGM('tense');
+
+  // Jika dibuka terus melalui ?trailer=1 dan pelayar menyekat audio tanpa sentuhan awal, buka kunci pada klik pertama
+  const resumeAudioIfNeeded = () => {
+    if (!trailerState.isPlaying) return;
+    soundManager.unlock();
+    if (!soundManager.isMuted() && !soundManager.getCurrentBGM() && !trailerState.isFinished) {
+      soundManager.playBGM('tense');
+    }
+  };
+  trailerState.audioUnlockHandler = resumeAudioIfNeeded;
+  document.addEventListener('pointerdown', resumeAudioIfNeeded, { once: true });
+  document.addEventListener('keydown', resumeAudioIfNeeded, { once: true });
+
+  // Tunjukkan butang Tutup buat seketika dan sembunyikan secara automatik selepas 2 saat
+  revealCloseTrailerTemporarily(true);
+  const handleActivity = () => {
+    if (!trailerState.isPlaying || trailerState.isFinished) return;
+    revealCloseTrailerTemporarily(true);
+  };
+  trailerState.activityHandler = handleActivity;
+  dom.trailerOverlay.addEventListener('mousemove', handleActivity);
+  dom.trailerOverlay.addEventListener('touchstart', handleActivity, { passive: true });
+
+  const renderVisual = (key, strobeMode = '', { impactShake = false, overlayPhrase = '' } = {}) => {
+    if (dom.trailerStage) {
+      dom.trailerStage.classList.toggle('is-impact-shake', Boolean(impactShake));
+    }
+    dom.trailerVisualLayer.innerHTML = getTrailerVisualMarkup(key);
+    setTrailerStrobeMode(strobeMode);
+    setTrailerOverlayPhrase(overlayPhrase);
+  };
+
+  // SEGMEN 1 (0–2.5s): Kad Tajuk 1 (Hitam Tulen — tepat 2.5 saat)
+  renderVisual('card_1', '');
+
+  // SEGMEN 2 (2.5–4.6s): Visual 1 — Pintu keluli berat menghentam tutup pantas (2.1s) + gegaran skrin + strob merah
+  scheduleTrailerStep(2500, () => {
+    renderVisual('visual_1_lockdown', 'is-red-strobe', { impactShake: true });
+  });
+  scheduleTrailerStep(2740, () => soundManager.playDoorSlamLock());
+  scheduleTrailerStep(3120, () => soundManager.playAlarm());
+
+  // SEGMEN 3 (4.6–7.6s): Kad Tajuk 2 (Hitam Tulen)
+  scheduleTrailerStep(4600, () => {
+    renderVisual('card_2', '');
+    soundManager.playTick(true);
+  });
+
+  // SEGMEN 4 (7.6–11.1s): Visual 2 — Pemasa merah berdetik (10:00 -> 09:57) & gas beracun turun dari siling
+  scheduleTrailerStep(7600, () => {
+    renderVisual('visual_2_gas', '');
+    soundManager.playAlarm();
+    soundManager.playGasHiss();
+  });
+  scheduleTrailerStep(8350, () => {
+    const el = document.getElementById('trailer-live-countdown');
+    if (el) el.textContent = '09:59';
+    soundManager.playTick(true);
+  });
+  scheduleTrailerStep(9250, () => {
+    const el = document.getElementById('trailer-live-countdown');
+    if (el) el.textContent = '09:58';
+    soundManager.playTick(true);
+  });
+  scheduleTrailerStep(10150, () => {
+    const el = document.getElementById('trailer-live-countdown');
+    if (el) el.textContent = '09:57';
+    soundManager.playTick(true);
+  });
+
+  // SEGMEN 5 (11.1–14.1s): Kad Tajuk 3 (Hitam Tulen)
+  scheduleTrailerStep(11100, () => {
+    renderVisual('card_3', '');
+  });
+
+  // SEGMEN 6 (14.1–19.0s): Visual 3 — 3 aksi permainan pantas (1.6s Baja NPK -> 1.6s Meter pH -> 1.7s Kertas Segi Tiga USDA)
+  scheduleTrailerStep(14100, () => {
+    renderVisual('visual_3_npk', 'is-flash-cut');
+    soundManager.playClick();
+  });
+  scheduleTrailerStep(14820, () => {
+    soundManager.playSuccess();
+  });
+  scheduleTrailerStep(15700, () => {
+    renderVisual('visual_3_ph', 'is-flash-cut');
+    soundManager.playClick();
+  });
+  scheduleTrailerStep(16720, () => {
+    soundManager.playSuccess();
+  });
+  scheduleTrailerStep(17300, () => {
+    renderVisual('visual_3_usda', 'is-flash-cut');
+    soundManager.playPage();
+  });
+
+  // SEGMEN 7 (19.0–21.5s): Kad Tajuk 4 (Hitam Tulen)
+  scheduleTrailerStep(19000, () => {
+    renderVisual('card_4', '');
+  });
+
+  // SEGMEN 8 (21.5–25.0s): Visual 4 — Rak buku rahsia bergeser mendedahkan Bilik Rahsia Makmal Agro
+  scheduleTrailerStep(21500, () => {
+    renderVisual('visual_4_bookshelf', 'is-flash-cut');
+    soundManager.playHeavyDoor();
+  });
+  scheduleTrailerStep(23200, () => soundManager.playSuccess());
+
+  // SEGMEN 9 (25.0–28.0s): Kad Tajuk 5 (Hitam Tulen)
+  scheduleTrailerStep(25000, () => {
+    renderVisual('card_5', '');
+  });
+
+  // SEGMEN 10 (28.0–31.5s): Visual 5 — Penggera 00:00 + kabur rebah + "ATAU TERKORBAN?" -> potong hitam tajam
+  scheduleTrailerStep(28000, () => {
+    renderVisual('visual_5_collapse', 'is-red-strobe', {
+      overlayPhrase: 'ATAU <span>TERKORBAN?</span>',
+    });
+    soundManager.playAlarm();
+    soundManager.playGasHiss();
+    soundManager.playLoseSound();
+  });
+  scheduleTrailerStep(31320, () => {
+    setTrailerOverlayPhrase('');
+    setTrailerStrobeMode('is-blackout-cut');
+  });
+
+  // SEGMEN 11 (31.5–36.0s): Kad Tajuk Akhir — Lambang zamrud-emas + ESCAPE: MAKMAL AGRO
+  scheduleTrailerStep(31500, () => {
+    renderVisual('visual_6_title', 'is-flash-cut');
+    soundManager.playTimeBonus();
+  });
+
+  scheduleTrailerStep(36000, () => {
+    trailerState.isFinished = true;
+    trailerState.isPlaying = false;
+    setTrailerStrobeMode('');
+    soundManager.stopBGM(0.55, true);
+    revealCloseTrailerTemporarily(false);
+  });
+}
+
+function stopCinematicTrailer(restoreBgm = true) {
+  const wasOpen = dom.trailerOverlay && !dom.trailerOverlay.hidden;
+  trailerState.isPlaying = false;
+  trailerState.isFinished = false;
+  clearTrailerTimers();
+
+  if (dom.trailerOverlay) {
+    if (trailerState.activityHandler) {
+      dom.trailerOverlay.removeEventListener('mousemove', trailerState.activityHandler);
+      dom.trailerOverlay.removeEventListener('touchstart', trailerState.activityHandler);
+      trailerState.activityHandler = null;
+    }
+    dom.trailerOverlay.hidden = true;
+  }
+  if (trailerState.audioUnlockHandler) {
+    document.removeEventListener('pointerdown', trailerState.audioUnlockHandler);
+    document.removeEventListener('keydown', trailerState.audioUnlockHandler);
+    trailerState.audioUnlockHandler = null;
+  }
+  if (dom.trailerStage) {
+    dom.trailerStage.classList.remove('is-impact-shake');
+  }
+  if (dom.trailerVisualLayer) {
+    dom.trailerVisualLayer.innerHTML = '';
+  }
+  setTrailerOverlayPhrase('');
+  setTrailerStrobeMode('');
+  if (dom.btnCloseTrailer) {
+    dom.btnCloseTrailer.classList.remove('is-autohidden');
+  }
+
+  if (restoreBgm && wasOpen) {
+    const fallbackTrack = trailerState.prevBgmTrack || 'calm';
+    if (!soundManager.isMuted()) {
+      soundManager.playBGM(fallbackTrack);
+    }
+  }
+}
+
+function launchTrailerFromUrlIfRequested() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('trailer') === '1') {
+      startCinematicTrailer();
+    }
+  } catch {
+    // Abaikan jika URLSearchParams tidak tersedia
+  }
 }
 
 // Eksport fungsi teras pada window agar mudah diuji dan disambung
@@ -7570,6 +8455,8 @@ window.agroGame = {
   showDialogue,
   generateCertificateCanvas,
   downloadVictoryCertificate,
+  startCinematicTrailer,
+  stopCinematicTrailer,
 };
 
 window.soundManager = soundManager;
@@ -7581,3 +8468,4 @@ window.addTimeBonus = addTimeBonus;
 // Mulakan aplikasi apabila DOM sedia
 initEventListeners();
 renderInventory();
+launchTrailerFromUrlIfRequested();

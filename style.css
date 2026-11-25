@@ -216,7 +216,7 @@ body.tension-phase-3 .tension-vignette {
 }
 
 /* ============================================================================
-   1. SKRIN PENDAFTARAN PEMAIN ("KAD AKSES MAKMAL UPSI")
+   1. SKRIN PENDAFTARAN PEMAIN ("KAD AKSES MAKMAL")
    ============================================================================ */
 
 #registration-screen {
@@ -344,7 +344,7 @@ body.tension-phase-3 .tension-vignette {
   letter-spacing: 0.01em;
 }
 
-/* Borang Kad Matrik Biru UPSI */
+/* Borang Kad Matrik Biru Makmal Agro */
 .matric-form {
   width: 100%;
   max-width: 650px;
@@ -354,7 +354,7 @@ body.tension-phase-3 .tension-vignette {
   gap: 20px;
 }
 
-.upsi-matric-card {
+.agro-matric-card {
   position: relative;
   width: 100%;
   overflow: hidden;
@@ -483,24 +483,26 @@ body.tension-phase-3 .tension-vignette {
 
 .avatar-selector.matric-gender-toggle {
   width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
   gap: 6px;
 }
 
 .avatar-option {
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   min-height: 36px;
-  padding: 4px 6px;
+  padding: 5px 4px;
   background: rgba(8, 22, 44, 0.68);
   border: 1.5px solid rgba(255, 255, 255, 0.28);
   border-radius: 7px;
   color: #dbeafe;
-  font-size: 0.74rem;
+  font-size: 0.69rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
   cursor: pointer;
   transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, transform 0.14s var(--ease-snappy);
 }
@@ -688,8 +690,7 @@ body.tension-phase-3 .tension-vignette {
 .matric-card-footer {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 10px;
   padding-top: 8px;
   border-top: 1px dashed rgba(255, 255, 255, 0.22);
@@ -2577,7 +2578,7 @@ body.tension-phase-3 .hud-timer {
   font-size: 0.88rem;
 }
 
-/* Pratonton Sijil Pencapaian UPSI */
+/* Pratonton Sijil Pencapaian Makmal Agro */
 .victory-certificate-wrap {
   width: 100%;
   margin-bottom: 18px;
@@ -3867,6 +3868,879 @@ body.tension-phase-3 .hud-timer {
   justify-content: flex-end;
 }
 
+/* ============================================================================
+   9. MOD TRELER SINEMATIK (GAYA GHOST CASE · 9:16 & LETTERBOX RESPONSIF)
+   ============================================================================ */
+
+.btn-trailer-launch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--ink-black);
+  background: linear-gradient(135deg, #2ea877 0%, #1d615c 100%);
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink-black), 0 0 14px rgba(46, 168, 119, 0.25);
+  transition: transform 0.16s var(--ease-snappy), filter 0.16s ease;
+}
+
+.btn-trailer-launch:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.trailer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: trailerOverlayFadeIn 0.55s ease-out both;
+}
+
+.trailer-overlay[hidden] {
+  display: none;
+}
+
+@keyframes trailerOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.btn-close-trailer {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 104;
+  min-height: 36px;
+  padding: 6px 13px;
+  background: rgba(7, 13, 17, 0.72);
+  color: rgba(230, 239, 242, 0.88);
+  border: 1px solid rgba(155, 179, 189, 0.28);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  opacity: 1;
+  transition: opacity 0.45s ease, transform 0.28s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-close-trailer:hover {
+  background: rgba(16, 30, 38, 0.92);
+  border-color: var(--accent-amber);
+  color: #fef08a;
+}
+
+.btn-close-trailer.is-autohidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+}
+
+.trailer-letterbox {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+}
+
+.trailer-stage {
+  position: relative;
+  width: 100vw;
+  max-width: 177.78vh;
+  max-height: 100vh;
+  aspect-ratio: 16 / 9;
+  background: #000000;
+  overflow: hidden;
+  box-shadow:
+    0 0 84px rgba(0, 0, 0, 0.98),
+    0 0 0 1px rgba(242, 183, 73, 0.12);
+}
+
+.trailer-stage.is-impact-shake {
+  animation: trailerStageImpactShake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.24s both;
+}
+
+@keyframes trailerStageImpactShake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  15% {
+    transform: translate3d(-8px, 6px, 0) scale(1.015);
+  }
+  30% {
+    transform: translate3d(8px, -5px, 0) scale(1.02);
+  }
+  45% {
+    transform: translate3d(-6px, -4px, 0);
+  }
+  60% {
+    transform: translate3d(5px, 4px, 0);
+  }
+  75% {
+    transform: translate3d(-3px, 2px, 0);
+  }
+}
+
+.trailer-visual-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #000000;
+  overflow: hidden;
+}
+
+.trailer-visual-layer svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.trailer-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(2, 5, 7, 0) 56%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+.trailer-strobe-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.trailer-strobe-layer.is-red-strobe {
+  background: radial-gradient(circle at 50% 24%, rgba(239, 68, 68, 0.6) 0%, rgba(153, 27, 27, 0.3) 54%, rgba(5, 8, 10, 0.12) 100%);
+  animation: trailerRedStrobe 0.48s ease-in-out infinite;
+}
+
+.trailer-strobe-layer.is-flash-cut {
+  background: rgba(236, 253, 245, 0.78);
+  animation: trailerFlashCut 0.32s ease-out both;
+}
+
+.trailer-strobe-layer.is-blackout-cut {
+  background: #000000;
+  opacity: 1;
+  animation: trailerSharpCutBlack 0.18s ease-out both;
+}
+
+@keyframes trailerRedStrobe {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  45% {
+    opacity: 0.92;
+  }
+}
+
+@keyframes trailerFlashCut {
+  0% {
+    opacity: 0.88;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes trailerSharpCutBlack {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Skrin Kad Tajuk Hitam Tulen (Tanpa Kesan Mesin Taip) */
+.trailer-title-card-screen {
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(28px, 6vw, 80px) clamp(32px, 8vw, 120px);
+  text-align: center;
+}
+
+.trailer-card-headline {
+  margin: 0;
+  max-width: 24ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 4.1vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.28;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  text-wrap: balance;
+  animation: trailerCardTextFade 0.68s ease-out both;
+}
+
+.trailer-card-headline .is-red-accent {
+  display: block;
+  margin-top: clamp(10px, 1.5vw, 18px);
+  color: #ff4d5a;
+  text-shadow: 0 0 32px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes trailerCardTextFade {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Gerakan Kamera & Adegan Visual Beranimasi */
+.trailer-motion-wrap {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+}
+
+.trailer-motion-wrap.is-trap-fade {
+  animation: trailerDarkFadeIn 0.32s ease-out both;
+}
+
+@keyframes trailerDarkFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.trailer-motion-wrap.is-timer-zoom {
+  animation: trailerTimerZoom 3.5s ease-in-out both;
+}
+
+@keyframes trailerTimerZoom {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.09);
+  }
+}
+
+.trailer-motion-wrap.is-puzzle-pop {
+  animation: trailerPuzzlePop 1.5s ease-out both;
+}
+
+@keyframes trailerPuzzlePop {
+  0% {
+    opacity: 0.25;
+    transform: scale(1.02);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.09);
+  }
+}
+
+.trailer-motion-wrap.is-collapse-pulse {
+  animation: trailerCollapseBlurPulse 3.4s ease-in-out both;
+}
+
+@keyframes trailerCollapseBlurPulse {
+  0% {
+    opacity: 0.2;
+    filter: blur(0px) brightness(1);
+    transform: scale(1);
+  }
+  18% {
+    opacity: 1;
+    filter: blur(1px) brightness(1);
+    transform: scale(1.02);
+  }
+  55% {
+    filter: blur(3.5px) brightness(0.75);
+    transform: scale(1.06);
+  }
+  75% {
+    filter: blur(2.5px) brightness(0.9);
+    transform: scale(1.04);
+  }
+  100% {
+    filter: blur(5px) brightness(0.5);
+    transform: scale(1.08);
+  }
+}
+
+.trailer-motion-wrap.is-title-glow {
+  animation: trailerTitleReveal 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes trailerTitleReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+    filter: blur(6px) brightness(1.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px) brightness(1);
+  }
+}
+
+.anim-trailer-door-left {
+  animation: trailerDoorSlamLeft 0.26s cubic-bezier(0.18, 0.95, 0.25, 1) 0.04s both;
+}
+
+.anim-trailer-door-right {
+  animation: trailerDoorSlamRight 0.26s cubic-bezier(0.18, 0.95, 0.25, 1) 0.04s both;
+}
+
+@keyframes trailerDoorSlamLeft {
+  0% {
+    transform: translateX(-230px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes trailerDoorSlamRight {
+  0% {
+    transform: translateX(230px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.anim-trailer-slam-bar {
+  animation: trailerDoorSlamBar 0.24s cubic-bezier(0.18, 0.95, 0.25, 1) 0.22s both;
+}
+
+@keyframes trailerDoorSlamBar {
+  0% {
+    transform: translateY(-48px) scaleY(0.8);
+    opacity: 0.2;
+  }
+  70% {
+    transform: translateY(4px) scaleY(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scaleY(1);
+    opacity: 1;
+  }
+}
+
+.anim-gas-drift-down {
+  animation: trailerGasDriftDown 3.4s ease-in-out infinite;
+}
+
+.anim-gas-drift-down-slow {
+  animation: trailerGasDriftDown 4.2s ease-in-out 0.3s infinite;
+}
+
+@keyframes trailerGasDriftDown {
+  0% {
+    transform: translateY(-28px) scale(0.96);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(44px) scale(1.04);
+    opacity: 0.88;
+  }
+  100% {
+    transform: translateY(108px) scale(1.1);
+    opacity: 0.15;
+  }
+}
+
+.anim-npk-pulse {
+  animation: trailerNpkPulse 0.85s ease-in-out infinite;
+}
+
+@keyframes trailerNpkPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+/* Visual 3 Beat 1: Ketikan Beg Baja NPK & Terbang Masuk ke Slot Inventori */
+.anim-npk-bag-pickup {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: trailerNpkBagToSlot 1.5s cubic-bezier(0.22, 0.88, 0.28, 1) 0.05s both;
+}
+
+@keyframes trailerNpkBagToSlot {
+  0%,
+  18% {
+    transform: translate(0, 0) scale(1);
+    filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.5));
+  }
+  30% {
+    transform: translate(0, -34px) scale(1.07);
+    filter: drop-shadow(0 20px 26px rgba(242, 183, 73, 0.45));
+  }
+  70% {
+    transform: translate(0, 325px) scale(0.36);
+    filter: drop-shadow(0 8px 16px rgba(52, 211, 153, 0.65));
+  }
+  100% {
+    transform: translate(0, 325px) scale(0.35);
+    filter: drop-shadow(0 4px 12px rgba(52, 211, 153, 0.8));
+  }
+}
+
+.anim-npk-tap-cursor {
+  transform-box: fill-box;
+  transform-origin: 0% 0%;
+  animation: trailerTapCursor 0.56s ease-out 0.06s both;
+}
+
+@keyframes trailerTapCursor {
+  0% {
+    opacity: 0;
+    transform: translate(28px, 24px) scale(1.1);
+  }
+  26% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  44% {
+    opacity: 1;
+    transform: translate(0, 2px) scale(0.84);
+  }
+  68% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(10px, 12px) scale(0.95);
+  }
+}
+
+.anim-npk-tap-ring {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: trailerTapRipple 0.55s ease-out 0.22s both;
+}
+
+.anim-npk-tap-ring-delay {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: trailerTapRipple 0.58s ease-out 0.3s both;
+}
+
+@keyframes trailerTapRipple {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.45);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.1);
+  }
+}
+
+.anim-inv-slot-activate {
+  animation: trailerSlotActivate 0.72s ease-out 0.76s both;
+}
+
+@keyframes trailerSlotActivate {
+  0% {
+    stroke: #1e3c4a;
+    stroke-width: 2.5;
+    fill: #0e1e26;
+  }
+  45% {
+    stroke: #fef08a;
+    stroke-width: 4.5;
+    fill: #15453b;
+  }
+  100% {
+    stroke: #34d399;
+    stroke-width: 3.5;
+    fill: #0f2d28;
+  }
+}
+
+.anim-npk-toast {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: trailerToastPopIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.72s both;
+}
+
+@keyframes trailerToastPopIn {
+  0% {
+    opacity: 0;
+    transform: translate(0, -24px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* Visual 3 Beat 2: Jarum Meter pH & Cahaya Pengesahan Hijau */
+.anim-ph-needle {
+  transform-box: fill-box;
+  transform-origin: 50% 88%;
+  animation: trailerPhNeedleSweep 1.25s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@keyframes trailerPhNeedleSweep {
+  0% {
+    transform: rotate(-52deg);
+  }
+  52% {
+    transform: rotate(34deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.anim-ph-confirm-glow {
+  animation: trailerPhConfirmGlow 0.65s ease-out 0.85s both;
+}
+
+@keyframes trailerPhConfirmGlow {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Visual 3 Beat 3: Latar Makmal Kabur + Kertas Petunjuk Segi Tiga USDA Terbuka */
+.trailer-usda-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #071015;
+}
+
+.trailer-usda-bg-blur {
+  position: absolute;
+  inset: -14px;
+  z-index: 1;
+  filter: blur(6px) brightness(0.7);
+  transform: scale(1.04);
+}
+
+.trailer-usda-backdrop-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(circle at 50% 50%, rgba(7, 16, 21, 0.22) 0%, rgba(4, 9, 12, 0.62) 100%);
+}
+
+.trailer-usda-paper-wrap {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  padding: clamp(18px, 4.2vh, 38px) clamp(24px, 5vw, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trailer-usda-paper-sheet {
+  width: min(92%, 1020px);
+  aspect-ratio: 980 / 580;
+  max-height: 92%;
+  transform-origin: center center;
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.78));
+  animation: trailerPaperUnfold 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+}
+
+@keyframes trailerPaperUnfold {
+  0% {
+    opacity: 0.15;
+    transform: perspective(1200px) scaleY(0.16) scaleX(0.72) rotateX(34deg);
+  }
+  48% {
+    opacity: 1;
+    transform: perspective(1200px) scaleY(0.86) scaleX(0.97) rotateX(9deg);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1200px) scaleY(1) scaleX(1) rotateX(0deg);
+  }
+}
+
+.anim-usda-highlight {
+  animation: trailerTriangleZonePulse 0.72s ease-in-out infinite;
+}
+
+@keyframes trailerTriangleZonePulse {
+  0%,
+  100% {
+    fill-opacity: 0.5;
+    stroke-width: 2.5;
+  }
+  50% {
+    fill-opacity: 1;
+    stroke-width: 4.5;
+  }
+}
+
+.anim-trailer-bookshelf-slide {
+  animation: trailerBookshelfSlide 2.6s cubic-bezier(0.25, 0.8, 0.25, 1) 0.45s both;
+}
+
+@keyframes trailerBookshelfSlide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(325px);
+  }
+}
+
+.anim-trailer-emerald-spill {
+  animation: trailerEmeraldSpill 2.4s ease-out 0.45s both;
+}
+
+@keyframes trailerEmeraldSpill {
+  0% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0.95;
+  }
+}
+
+/* Teks Overlay Dramatik ("ATAU TERKORBAN?") Di Atas Adegan Rebah */
+.trailer-overlay-text {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  text-align: center;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.56) 0%, rgba(0, 0, 0, 0.2) 72%);
+  animation: trailerOverlayTextSlam 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+}
+
+.trailer-overlay-text[hidden] {
+  display: none;
+}
+
+.trailer-overlay-phrase {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5.4vw, 4.6rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.18;
+  color: #ffffff;
+  text-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.98),
+    0 0 42px rgba(239, 68, 68, 0.92);
+}
+
+.trailer-overlay-phrase span {
+  color: #ff4d5a;
+}
+
+@keyframes trailerOverlayTextSlam {
+  0% {
+    opacity: 0;
+    transform: scale(1.16);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Kad Tajuk Akhir 16:9 dengan Imej Kod QR Sebenar */
+.trailer-final-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.trailer-final-backdrop-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.trailer-final-foreground {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: clamp(22px, 5.5vh, 52px) clamp(28px, 6vw, 84px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.85vh, 18px);
+  text-align: center;
+}
+
+.trailer-final-emblem-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trailer-visual-layer .trailer-final-emblem {
+  width: clamp(58px, 12.2vh, 112px);
+  height: clamp(58px, 12.2vh, 112px);
+  display: block;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.65));
+}
+
+.trailer-final-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4.9vw, 4.25rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: 0.05em;
+  background: linear-gradient(125deg, #fef08a 0%, #f2b749 52%, #6ee7b7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.9));
+}
+
+.trailer-final-divider {
+  width: min(56%, 680px);
+  height: 2.5px;
+  background: linear-gradient(90deg, rgba(242, 183, 73, 0) 0%, rgba(242, 183, 73, 0.72) 22%, rgba(242, 183, 73, 0.72) 78%, rgba(242, 183, 73, 0) 100%);
+}
+
+.trailer-final-subtitle {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 1.9vw, 1.55rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #d1fae5;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+}
+
+.trailer-final-qr-banner {
+  margin-top: clamp(4px, 1.2vh, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 2.6vw, 32px);
+  padding: clamp(10px, 1.8vh, 16px) clamp(18px, 3vw, 34px);
+  background: rgba(13, 38, 34, 0.94);
+  border: 3px solid #f2b749;
+  border-radius: 18px;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.7),
+    0 0 32px rgba(46, 168, 119, 0.24);
+}
+
+.trailer-final-qr-img {
+  background: #ffffff;
+  padding: 10px;
+  border-radius: 12px;
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+  border: 2px solid #040709;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.trailer-final-qr-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  text-align: left;
+}
+
+.trailer-final-qr-eyebrow {
+  font-family: var(--font-mono);
+  font-size: clamp(0.95rem, 1.95vw, 1.55rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fef08a;
+  line-height: 1.2;
+}
+
+.trailer-final-qr-cta {
+  font-family: var(--font-mono);
+  font-size: clamp(1.1rem, 2.3vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: #6ee7b7;
+  line-height: 1.15;
+}
+
+@media (max-width: 720px), (max-height: 480px) {
+  .trailer-final-qr-img {
+    width: 96px;
+    height: 96px;
+    padding: 7px;
+  }
+
+  .trailer-final-qr-banner {
+    padding: 9px 16px;
+    gap: 14px;
+  }
+}
+
 @media (max-width: 780px) {
   .soil-tri-layout,
   .micro-layout,
@@ -3951,7 +4825,7 @@ body.tension-phase-3 .hud-timer {
     font-size: 0.78rem;
   }
 
-  .upsi-matric-card {
+  .agro-matric-card {
     padding: 16px 15px 15px;
     border-radius: 14px;
   }
@@ -3993,7 +4867,8 @@ body.tension-phase-3 .hud-timer {
   }
 
   .avatar-selector.matric-gender-toggle {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    gap: 6px;
   }
 
   .matric-qr-wrap {
@@ -4001,7 +4876,7 @@ body.tension-phase-3 .hud-timer {
   }
 
   .matric-card-footer {
-    justify-content: space-between;
+    justify-content: flex-end;
   }
 
   .matric-barcode-svg {
@@ -4124,6 +4999,15 @@ body.tension-phase-3 .hud-timer {
   .tutorial-card-header {
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .btn-close-trailer {
+    top: 10px;
+    right: 10px;
+  }
+
+  .trailer-title-card-screen {
+    padding: 24px 20px;
   }
 }
 
