@@ -80,6 +80,100 @@ const ROOMS = [
 // 2. KEADAAN PERMAINAN PUSAT (GAME STATE)
 // ============================================================================
 
+function shuffleArrayCopy(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function generateShuffledNpkAssignments() {
+  const permutations = [
+    { A: 'K', B: 'N', C: 'P' },
+    { A: 'P', B: 'K', C: 'N' },
+    { A: 'K', B: 'P', C: 'N' },
+    { A: 'P', B: 'N', C: 'K' },
+    { A: 'N', B: 'K', C: 'P' },
+  ];
+  return { ...permutations[Math.floor(Math.random() * permutations.length)] };
+}
+
+function generateMicroscopePuzzleConfig() {
+  let slides =
+    Math.random() < 0.65
+      ? { X: 'dikot', Y: 'monokot' }
+      : { X: 'monokot', Y: 'dikot' };
+  let buttonOrders = {
+    xClass: shuffleArrayCopy(['monokot', 'dikot']),
+    xCot: shuffleArrayCopy(['1', '2']),
+    yClass: shuffleArrayCopy(['monokot', 'dikot']),
+    yCot: shuffleArrayCopy(['1', '2']),
+  };
+  // Elakkan susunan lama serentak (X=Monokot/1 di butang kiri & Y=Dikot/2 di butang kanan)
+  if (
+    slides.X === 'monokot' &&
+    buttonOrders.xClass[0] === 'monokot' &&
+    buttonOrders.xCot[0] === '1' &&
+    buttonOrders.yClass[0] === 'monokot' &&
+    buttonOrders.yCot[0] === '1'
+  ) {
+    slides = { X: 'dikot', Y: 'monokot' };
+    buttonOrders.xClass = ['dikot', 'monokot'];
+    buttonOrders.yCot = ['2', '1'];
+  }
+  return { slides, buttonOrders };
+}
+
+function generateTaxonomyPuzzleConfig() {
+  const baseOrder = ['pisang', 'durian', 'nanas', 'mangga'];
+  let specimenOrder = shuffleArrayCopy(baseOrder);
+  if (specimenOrder.every((k, idx) => k === baseOrder[idx])) {
+    specimenOrder = ['nanas', 'mangga', 'pisang', 'durian'];
+  }
+
+  const classButtonOrders = {
+    pisang: shuffleArrayCopy(['monokot', 'dikot']),
+    durian: shuffleArrayCopy(['monokot', 'dikot']),
+    nanas: shuffleArrayCopy(['monokot', 'dikot']),
+    mangga: shuffleArrayCopy(['monokot', 'dikot']),
+  };
+  // Pastikan susunan butang Monokot/Dikot tidak seragam untuk semua spesimen
+  if (
+    classButtonOrders.pisang[0] === classButtonOrders.durian[0] &&
+    classButtonOrders.durian[0] === classButtonOrders.nanas[0] &&
+    classButtonOrders.nanas[0] === classButtonOrders.mangga[0]
+  ) {
+    classButtonOrders.durian = classButtonOrders.durian.slice().reverse();
+    classButtonOrders.nanas = classButtonOrders.nanas.slice().reverse();
+  }
+
+  const alphaSci = [
+    'Ananas comosus',
+    'Artocarpus heterophyllus',
+    'Carica papaya',
+    'Durio zibethinus',
+    'Mangifera indica',
+    'Musa acuminata',
+    'Nephelium lappaceum',
+  ];
+  let sciOptionsOrder = shuffleArrayCopy(alphaSci);
+  if (sciOptionsOrder.every((s, idx) => s === alphaSci[idx])) {
+    sciOptionsOrder = [
+      'Mangifera indica',
+      'Musa acuminata',
+      'Artocarpus heterophyllus',
+      'Ananas comosus',
+      'Nephelium lappaceum',
+      'Durio zibethinus',
+      'Carica papaya',
+    ];
+  }
+
+  return { specimenOrder, classButtonOrders, sciOptionsOrder };
+}
+
 function createInitialGameState() {
   return {
     playerName: '',
@@ -114,9 +208,12 @@ function createInitialGameState() {
       phSolved: false,
       soilTriangle: false,
       microscope: false,
+      microscopeConfig: generateMicroscopePuzzleConfig(),
       greenhouseRack: false,
+      npkAssignments: generateShuffledNpkAssignments(),
       npkCured: { A: false, B: false, C: false },
       bioVault: false,
+      taxonomyConfig: generateTaxonomyPuzzleConfig(),
     },
     flags: {
       phase2Warned: false,
@@ -699,6 +796,165 @@ const soundManager = (() => {
     }
   }
 
+  function playRelayClick() {
+    const audio = getContext();
+    if (!audio) return;
+    const now = audio.currentTime;
+    try {
+      [
+        { freq: 1450, t: 0, dur: 0.022, gain: 0.065 },
+        { freq: 720, t: 0.018, dur: 0.028, gain: 0.05 },
+      ].forEach((n) => {
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(n.freq, now + n.t);
+        osc.frequency.exponentialRampToValueAtTime(n.freq * 0.55, now + n.t + n.dur);
+        g.gain.setValueAtTime(n.gain, now + n.t);
+        g.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.dur);
+        osc.connect(g).connect(audio.destination);
+        osc.start(now + n.t);
+        osc.stop(now + n.t + n.dur + 0.01);
+      });
+    } catch {
+      // Abaikan
+    }
+  }
+
+  function playVaultUnlock() {
+    const audio = getContext();
+    if (!audio) return;
+    const now = audio.currentTime;
+    try {
+      // Putaran gear roda kebal + selak keluli tergelincir
+      [0, 0.11, 0.22, 0.34].forEach((offset, i) => {
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(280 + i * 65, now + offset);
+        osc.frequency.exponentialRampToValueAtTime(160, now + offset + 0.065);
+        g.gain.setValueAtTime(0.08, now + offset);
+        g.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.075);
+        osc.connect(g).connect(audio.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.085);
+      });
+      const bolt = audio.createOscillator();
+      const boltG = audio.createGain();
+      bolt.type = 'sawtooth';
+      bolt.frequency.setValueAtTime(140, now + 0.44);
+      bolt.frequency.exponentialRampToValueAtTime(420, now + 0.68);
+      boltG.gain.setValueAtTime(0.09, now + 0.44);
+      boltG.gain.exponentialRampToValueAtTime(0.001, now + 0.72);
+      bolt.connect(boltG).connect(audio.destination);
+      bolt.start(now + 0.44);
+      bolt.stop(now + 0.75);
+
+      const chime = audio.createOscillator();
+      const cG = audio.createGain();
+      chime.type = 'sine';
+      chime.frequency.setValueAtTime(987.77, now + 0.7);
+      cG.gain.setValueAtTime(0.09, now + 0.7);
+      cG.gain.exponentialRampToValueAtTime(0.001, now + 1.05);
+      chime.connect(cG).connect(audio.destination);
+      chime.start(now + 0.7);
+      chime.stop(now + 1.08);
+    } catch {
+      // Abaikan
+    }
+  }
+
+  function playMetallicRattle() {
+    const audio = getContext();
+    if (!audio) return;
+    const now = audio.currentTime;
+    try {
+      [0, 0.07, 0.14].forEach((offset, idx) => {
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(215 - idx * 35, now + offset);
+        osc.frequency.exponentialRampToValueAtTime(88, now + offset + 0.09);
+        g.gain.setValueAtTime(0.11, now + offset);
+        g.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.11);
+        osc.connect(g).connect(audio.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.12);
+      });
+    } catch {
+      // Abaikan
+    }
+  }
+
+  function playBubbleDip() {
+    const audio = getContext();
+    if (!audio) return;
+    const now = audio.currentTime;
+    try {
+      [
+        { f1: 310, f2: 640, t: 0, dur: 0.09 },
+        { f1: 420, f2: 860, t: 0.1, dur: 0.08 },
+        { f1: 520, f2: 980, t: 0.21, dur: 0.07 },
+      ].forEach((b) => {
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(b.f1, now + b.t);
+        osc.frequency.exponentialRampToValueAtTime(b.f2, now + b.t + b.dur);
+        g.gain.setValueAtTime(0.065, now + b.t);
+        g.gain.exponentialRampToValueAtTime(0.001, now + b.t + b.dur);
+        osc.connect(g).connect(audio.destination);
+        osc.start(now + b.t);
+        osc.stop(now + b.t + b.dur + 0.01);
+      });
+    } catch {
+      // Abaikan
+    }
+  }
+
+  function playWaterValve() {
+    const audio = getContext();
+    if (!audio) return;
+    const now = audio.currentTime;
+    try {
+      // Bunyi pusingan injap mekanikal + aliran air dalam paip PVC
+      const creak = audio.createOscillator();
+      const cGain = audio.createGain();
+      creak.type = 'triangle';
+      creak.frequency.setValueAtTime(240, now);
+      creak.frequency.exponentialRampToValueAtTime(380, now + 0.16);
+      cGain.gain.setValueAtTime(0.08, now);
+      cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+      creak.connect(cGain).connect(audio.destination);
+      creak.start(now);
+      creak.stop(now + 0.2);
+
+      const dur = 0.55;
+      const bufSize = Math.floor(audio.sampleRate * dur);
+      const noiseBuf = audio.createBuffer(1, bufSize, audio.sampleRate);
+      const out = noiseBuf.getChannelData(0);
+      for (let i = 0; i < bufSize; i += 1) {
+        out[i] = Math.random() * 2 - 1;
+      }
+      const src = audio.createBufferSource();
+      src.buffer = noiseBuf;
+      const bp = audio.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(420, now + 0.08);
+      bp.frequency.exponentialRampToValueAtTime(1150, now + 0.35);
+      bp.Q.setValueAtTime(2.1, now + 0.08);
+      const g = audio.createGain();
+      g.gain.setValueAtTime(0.001, now + 0.08);
+      g.gain.linearRampToValueAtTime(0.11, now + 0.22);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.08 + dur);
+      src.connect(bp).connect(g).connect(audio.destination);
+      src.start(now + 0.08);
+      src.stop(now + 0.08 + dur + 0.02);
+    } catch {
+      // Abaikan
+    }
+  }
+
   function registerBgmVoice(node) {
     if (activeBgmVoices.length > 64) {
       activeBgmVoices = activeBgmVoices.slice(-48);
@@ -1103,6 +1359,11 @@ const soundManager = (() => {
     playLoseSound,
     playDoorOpen,
     playWinFanfare,
+    playRelayClick,
+    playVaultUnlock,
+    playMetallicRattle,
+    playBubbleDip,
+    playWaterValve,
   };
 })();
 
@@ -1114,6 +1375,21 @@ function playSFX(type) {
   switch (type) {
     case 'click':
       soundManager.playClick();
+      break;
+    case 'relay':
+      soundManager.playRelayClick();
+      break;
+    case 'vaultUnlock':
+      soundManager.playVaultUnlock();
+      break;
+    case 'rattle':
+      soundManager.playMetallicRattle();
+      break;
+    case 'bubbleDip':
+      soundManager.playBubbleDip();
+      break;
+    case 'valve':
+      soundManager.playWaterValve();
       break;
     case 'type':
       soundManager.playTypewriter();
@@ -1339,15 +1615,31 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
   const eyeLeftX = isFemale ? 27.5 : 27;
   const eyeRightX = isFemale ? 36.5 : 37;
   const eyeY = 28;
+  const studioBg =
+    mood === 'happy'
+      ? '#15443f'
+      : mood === 'crying' || mood === 'shocked' || mood === 'dizzy'
+        ? '#2d1620'
+        : mood === 'coughing'
+          ? '#153036'
+          : '#163442';
 
   let browsAndEyes = `
-    <circle cx="${eyeLeftX}" cy="${eyeY}" r="1.7" fill="#05080a"/>
-    <circle cx="${eyeRightX}" cy="${eyeY}" r="1.7" fill="#05080a"/>
+    <path d="M${eyeLeftX - 2.9} ${eyeY - 3.6} Q${eyeLeftX} ${eyeY - 4.8} ${eyeLeftX + 2.7} ${eyeY - 3.5}" fill="none" stroke="#05080a" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M${eyeRightX - 2.7} ${eyeY - 3.5} Q${eyeRightX} ${eyeY - 4.8} ${eyeRightX + 2.9} ${eyeY - 3.6}" fill="none" stroke="#05080a" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="${eyeLeftX}" cy="${eyeY}" rx="1.9" ry="2.1" fill="#05080a"/>
+    <ellipse cx="${eyeRightX}" cy="${eyeY}" rx="1.9" ry="2.1" fill="#05080a"/>
+    <circle cx="${eyeLeftX - 0.6}" cy="${eyeY - 0.8}" r="0.7" fill="#ffffff"/>
+    <circle cx="${eyeRightX - 0.6}" cy="${eyeY - 0.8}" r="0.7" fill="#ffffff"/>
   `;
   let mouthMarkup = `
-    <path d="M28 34 Q32 36 36 34" fill="none" stroke="#05080a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M31.5 30.2 L32 32 L32.8 31.8" fill="none" stroke="#a67956" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M28.2 34.4 Q32 36.6 35.8 34.4" fill="none" stroke="#05080a" stroke-width="1.8" stroke-linecap="round"/>
   `;
-  let extrasMarkup = '';
+  let extrasMarkup = `
+    <ellipse cx="24" cy="31.5" rx="2.1" ry="1.1" fill="#e87a7a" fill-opacity="0.28"/>
+    <ellipse cx="40" cy="31.5" rx="2.1" ry="1.1" fill="#e87a7a" fill-opacity="0.28"/>
+  `;
 
   if (mood === 'happy') {
     browsAndEyes = `
@@ -1357,12 +1649,13 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
       <path d="M${eyeRightX - 2.6} ${eyeY + 0.8} Q${eyeRightX} ${eyeY - 2.6} ${eyeRightX + 2.6} ${eyeY + 0.8}" fill="none" stroke="#05080a" stroke-width="2" stroke-linecap="round"/>
     `;
     mouthMarkup = `
+      <path d="M31.5 30 L32 31.6 L32.7 31.4" fill="none" stroke="#a67956" stroke-width="1" stroke-linecap="round"/>
       <path d="M26.5 33 Q32 39 37.5 33 Z" fill="#8f2d39" stroke="#05080a" stroke-width="1.7" stroke-linejoin="round"/>
       <path d="M28.5 33.4 Q32 35.2 35.5 33.4" fill="none" stroke="#fff7ed" stroke-width="1.2" stroke-linecap="round"/>
     `;
     extrasMarkup = `
-      <ellipse cx="24" cy="31.5" rx="2.4" ry="1.3" fill="#e87a7a" fill-opacity="0.45"/>
-      <ellipse cx="40" cy="31.5" rx="2.4" ry="1.3" fill="#e87a7a" fill-opacity="0.45"/>
+      <ellipse cx="24" cy="31.5" rx="2.4" ry="1.3" fill="#e87a7a" fill-opacity="0.48"/>
+      <ellipse cx="40" cy="31.5" rx="2.4" ry="1.3" fill="#e87a7a" fill-opacity="0.48"/>
     `;
   } else if (mood === 'shocked') {
     browsAndEyes = `
@@ -1372,6 +1665,8 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
       <circle cx="${eyeRightX}" cy="${eyeY}" r="3.1" fill="#ffffff" stroke="#05080a" stroke-width="1.5"/>
       <circle cx="${eyeLeftX}" cy="${eyeY + 0.2}" r="1.25" fill="#05080a"/>
       <circle cx="${eyeRightX}" cy="${eyeY + 0.2}" r="1.25" fill="#05080a"/>
+      <circle cx="${eyeLeftX - 0.5}" cy="${eyeY - 0.5}" r="0.55" fill="#ffffff"/>
+      <circle cx="${eyeRightX - 0.5}" cy="${eyeY - 0.5}" r="0.55" fill="#ffffff"/>
     `;
     mouthMarkup = `
       <ellipse cx="32" cy="35.3" rx="3.1" ry="3.4" fill="#6b1d28" stroke="#05080a" stroke-width="1.8"/>
@@ -1434,15 +1729,32 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
     `;
   }
 
+  const coatMarkup = `
+    <path d="M10 64 C12 47 21 43 32 43 C43 43 52 47 54 64 Z" fill="#f1f5f9" stroke="#05080a" stroke-width="2.2"/>
+    <path d="M25 43 L32 55 L39 43 Z" fill="#164452" stroke="#05080a" stroke-width="1.6"/>
+    <path d="M22 44 L28 56 L24 58 L19 48 Z" fill="#ffffff" stroke="#05080a" stroke-width="1.4"/>
+    <path d="M42 44 L36 56 L40 58 L45 48 Z" fill="#ffffff" stroke="#05080a" stroke-width="1.4"/>
+    <rect x="37" y="54" width="9" height="7" rx="1.2" fill="#e2e8f0" stroke="#64748b" stroke-width="1"/>
+    <line x1="40" y1="51.5" x2="40" y2="55.5" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="40" cy="51.5" r="0.9" fill="#f2b749"/>
+    <circle cx="20.5" cy="54.5" r="2" fill="#34d399" stroke="#05080a" stroke-width="1"/>
+  `;
+
   if (isFemale) {
     return `
       <svg viewBox="0 0 64 64" width="100%" height="100%">
         <rect width="64" height="64" fill="${bgFill}"/>
+        <circle cx="32" cy="30" r="24" fill="${studioBg}" fill-opacity="0.45"/>
         ${haloMarkup}
-        <path d="M12 64 C14 48 22 44 32 44 C42 44 50 48 52 64 Z" fill="#e6eff2" stroke="#05080a" stroke-width="2.5"/>
-        <path d="M16 32 C16 14 24 10 32 10 C40 10 48 14 48 32 L46 49 C40 53 24 53 18 49 Z" fill="#1f5868" stroke="#05080a" stroke-width="2.4"/>
-        <ellipse cx="32" cy="28" rx="11.5" ry="12.5" fill="#e2be9e" stroke="#05080a" stroke-width="2.2"/>
-        <path d="M20.5 24 C23 17 41 17 43.5 24" fill="none" stroke="#05080a" stroke-width="2"/>
+        ${coatMarkup}
+        <!-- Tudung Pelajar Sains Pertanian Berlapis -->
+        <path d="M15 32 C15 13 23.5 9 32 9 C40.5 9 49 13 49 32 L47.5 49.5 C41 54.5 23 54.5 16.5 49.5 Z" fill="#1b5464" stroke="#05080a" stroke-width="2.2"/>
+        <path d="M18.5 25 C21 15 27 12.5 32 12.5 C37 12.5 43 15 45.5 25" fill="none" stroke="#2d7a8f" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M18.5 44 C23.5 49.5 40.5 49.5 45.5 44" fill="none" stroke="#113844" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="32" cy="44.8" r="2" fill="#f2b749" stroke="#05080a" stroke-width="1"/>
+        <ellipse cx="32" cy="28" rx="11.4" ry="12.2" fill="#e5c1a1" stroke="#05080a" stroke-width="2.1"/>
+        <path d="M21.5 31 Q32 40 42.5 31 Q40.5 38.5 32 39.8 Q23.5 38.5 21.5 31 Z" fill="#cc9f7a" fill-opacity="0.4"/>
+        <path d="M21 22.8 C24.5 17 39.5 17 43 22.8" fill="none" stroke="#05080a" stroke-width="1.7" stroke-linecap="round"/>
         ${extrasMarkup}
         ${browsAndEyes}
         ${mouthMarkup}
@@ -1450,15 +1762,20 @@ function getPlayerPortraitSVG(gender, emotion = 'neutral') {
     `;
   }
 
-  // Pelajar Lelaki (Kot Makmal Agro)
+  // Pelajar Lelaki (Kot Makmal Agro + Poket Pen)
   return `
     <svg viewBox="0 0 64 64" width="100%" height="100%">
       <rect width="64" height="64" fill="${bgFill}"/>
+      <circle cx="32" cy="30" r="24" fill="${studioBg}" fill-opacity="0.45"/>
       ${haloMarkup}
-      <path d="M12 64 C14 48 22 44 32 44 C42 44 50 48 52 64 Z" fill="#e6eff2" stroke="#05080a" stroke-width="2.5"/>
-      <path d="M26 44 L32 54 L38 44" fill="#1d4d5c" stroke="#05080a" stroke-width="2"/>
-      <circle cx="32" cy="27" r="13" fill="#d9b493" stroke="#05080a" stroke-width="2.5"/>
-      <path d="M19 25 C19 14 27 11 33 11 C41 11 45 17 45 25 C41 20 35 19 28 20 C23 20 21 23 19 25 Z" fill="#141b1f" stroke="#05080a" stroke-width="2"/>
+      <rect x="27" y="38" width="10" height="8" rx="3" fill="#c59b78"/>
+      ${coatMarkup}
+      <circle cx="19.5" cy="28" r="2.6" fill="#cfa482" stroke="#05080a" stroke-width="1.6"/>
+      <circle cx="44.5" cy="28" r="2.6" fill="#cfa482" stroke="#05080a" stroke-width="1.6"/>
+      <ellipse cx="32" cy="27.5" rx="12.2" ry="13" fill="#deb896" stroke="#05080a" stroke-width="2.2"/>
+      <path d="M21 31 Q32 41 43 31 Q41 39 32 40.5 Q23 39 21 31 Z" fill="#c99c77" fill-opacity="0.45"/>
+      <path d="M19.2 25.5 C18.8 14 26.5 9.5 33 10 C41.5 10.5 45.5 16.5 44.8 25.5 C41.5 19.5 35.5 18.2 28.5 19.4 C23.8 20.2 21 22.8 19.2 25.5 Z" fill="#151d24" stroke="#05080a" stroke-width="2"/>
+      <path d="M24 14.5 Q32 11.5 40 15" fill="none" stroke="#334155" stroke-width="1.4" stroke-linecap="round"/>
       ${extrasMarkup}
       ${browsAndEyes}
       ${mouthMarkup}
@@ -2448,12 +2765,24 @@ function applyTimePenalty(seconds = 30, puzzleId = 'general', customWarning = ''
   }
   gameState.mistakeBreakdown[puzzleId] += 1;
 
-  // Kilasan amaran merah
+  // Kilasan amaran merah & gegaran logam pada modal/pentas
   dom.penaltyFlash.classList.remove('active');
   void dom.penaltyFlash.offsetWidth; // paksa reflow animasi
   dom.penaltyFlash.classList.add('active');
 
+  const inspectCard = dom.inspectModal ? dom.inspectModal.querySelector('.modal-inspect') : null;
+  if (inspectCard && !dom.inspectModal.hidden) {
+    inspectCard.classList.remove('is-rattle');
+    void inspectCard.offsetWidth;
+    inspectCard.classList.add('is-rattle');
+  } else if (dom.roomStage) {
+    dom.roomStage.classList.remove('is-rattle');
+    void dom.roomStage.offsetWidth;
+    dom.roomStage.classList.add('is-rattle');
+  }
+
   playSFX('penalty');
+  playSFX('rattle');
   updateTimerAndTensionUI();
 
   const message =
@@ -3290,48 +3619,89 @@ function renderRoomSVG(viewId) {
         <svg viewBox="0 0 1120 630" class="room-svg" aria-label="Bilik 1: Pintu Keluar dan Panel Kawalan">
           <defs>
             <linearGradient id="v1Wall" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#13242d"/>
-              <stop offset="100%" stop-color="#091217"/>
+              <stop offset="0%" stop-color="#152833"/>
+              <stop offset="100%" stop-color="#081015"/>
             </linearGradient>
-            <radialGradient id="v1AlarmLamp" cx="535" cy="60" r="240" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="${doorOpen ? '#10b981' : '#ef4444'}" stop-opacity="0.38"/>
-              <stop offset="60%" stop-color="#2a7f8e" stop-opacity="0.12"/>
+            <pattern id="v1LabTiles" width="56" height="36" patternUnits="userSpaceOnUse">
+              <rect width="56" height="36" fill="none" stroke="#1e3946" stroke-width="1" stroke-opacity="0.45"/>
+              <line x1="0" y1="1" x2="56" y2="1" stroke="#67e8f9" stroke-opacity="0.06" stroke-width="1"/>
+            </pattern>
+            <radialGradient id="v1AlarmLamp" cx="535" cy="54" r="280" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="${doorOpen ? '#10b981' : '#ef4444'}" stop-opacity="0.44"/>
+              <stop offset="55%" stop-color="#2a7f8e" stop-opacity="0.14"/>
               <stop offset="100%" stop-color="#05080a" stop-opacity="0"/>
             </radialGradient>
-            <linearGradient id="v1DeskGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#263e4a"/>
-              <stop offset="100%" stop-color="#14232b"/>
+            <linearGradient id="v1LightCone" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="#0b181f" stop-opacity="0"/>
             </linearGradient>
+            <linearGradient id="v1SteelBench" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#263f4c"/>
+              <stop offset="45%" stop-color="#456574"/>
+              <stop offset="100%" stop-color="#1e3440"/>
+            </linearGradient>
+            <linearGradient id="v1DoorSteel" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="${doorOpen ? '#133b33' : '#182b34'}"/>
+              <stop offset="50%" stop-color="${doorOpen ? '#0e2c26' : '#122027'}"/>
+              <stop offset="100%" stop-color="#091318"/>
+            </linearGradient>
+            <filter id="v1Shadow" x="-10%" y="-10%" width="120%" height="125%">
+              <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#020507" flood-opacity="0.65"/>
+            </filter>
           </defs>
           <rect width="1120" height="630" fill="url(#v1Wall)"/>
+          <rect x="0" y="0" width="1120" height="490" fill="url(#v1LabTiles)"/>
           <rect width="1120" height="630" fill="url(#v1AlarmLamp)"/>
 
-          <!-- Paip Makmal & Jalur Dinding -->
-          <rect x="0" y="34" width="1120" height="14" fill="#182d37" stroke="#040709" stroke-width="3"/>
-          <line x1="0" y1="365" x2="1120" y2="365" stroke="#081014" stroke-width="3"/>
+          <!-- Lampu Pendarfluor Siling & Kon Cahaya Volumetrik -->
+          <polygon points="150,24 390,24 445,490 95,490" fill="url(#v1LightCone)"/>
+          <polygon points="690,24 930,24 985,490 635,490" fill="url(#v1LightCone)"/>
+          <rect x="148" y="8" width="244" height="16" rx="4" fill="#233a46" stroke="#040709" stroke-width="3"/>
+          <rect x="164" y="18" width="212" height="6" rx="2" fill="#e0f2fe" opacity="0.88"/>
+          <rect x="688" y="8" width="244" height="16" rx="4" fill="#233a46" stroke="#040709" stroke-width="3"/>
+          <rect x="704" y="18" width="212" height="6" rx="2" fill="#e0f2fe" opacity="0.88"/>
 
-          <!-- Lantai Makmal -->
-          <polygon points="0,490 1120,490 1120,630 0,630" fill="#0d181e" stroke="#040709" stroke-width="4"/>
+          <!-- Paip Konduit Siling & Pendakap Logam -->
+          <rect x="0" y="34" width="1120" height="14" fill="#1b323d" stroke="#040709" stroke-width="3"/>
+          <line x1="0" y1="38" x2="1120" y2="38" stroke="#67e8f9" stroke-opacity="0.18" stroke-width="2"/>
+          <rect x="84" y="28" width="12" height="26" rx="2" fill="#324c59" stroke="#040709" stroke-width="2"/>
+          <rect x="318" y="28" width="12" height="26" rx="2" fill="#324c59" stroke="#040709" stroke-width="2"/>
+          <rect x="760" y="28" width="12" height="26" rx="2" fill="#324c59" stroke="#040709" stroke-width="2"/>
+          <rect x="1020" y="28" width="12" height="26" rx="2" fill="#324c59" stroke="#040709" stroke-width="2"/>
+          <line x1="0" y1="365" x2="1120" y2="365" stroke="#060c10" stroke-width="4"/>
+          <line x1="0" y1="362" x2="1120" y2="362" stroke="#325464" stroke-opacity="0.35" stroke-width="1.5"/>
+
+          <!-- Lantai Makmal Berjubin Perspektif -->
+          <polygon points="0,490 1120,490 1120,630 0,630" fill="#0c171d" stroke="#040709" stroke-width="4"/>
+          <polygon points="0,490 1120,490 1120,502 0,502" fill="#182b34" opacity="0.6"/>
           <line x1="180" y1="490" x2="90" y2="630" stroke="#05080a" stroke-width="2.5"/>
           <line x1="420" y1="490" x2="395" y2="630" stroke="#05080a" stroke-width="2.5"/>
           <line x1="670" y1="490" x2="700" y2="630" stroke="#05080a" stroke-width="2.5"/>
           <line x1="920" y1="490" x2="1010" y2="630" stroke="#05080a" stroke-width="2.5"/>
 
           <!-- Hotspot 1: Pintu Utama Keluli dengan Kunci Magnetik -->
-          <g class="hotspot" data-hotspot="v1_exit_door" tabindex="0" role="button" aria-label="Periksa Pintu Utama Keluli">
-            <rect class="hotspot-outline" x="380" y="92" width="310" height="398" rx="4" fill="#1b303a" stroke="#040709" stroke-width="5"/>
-            <rect x="404" y="114" width="262" height="376" fill="${doorOpen ? '#0e2d29' : '#111f26'}" stroke="#040709" stroke-width="3.5"/>
+          <g class="hotspot" data-hotspot="v1_exit_door" tabindex="0" role="button" aria-label="Periksa Pintu Utama Keluli" filter="url(#v1Shadow)">
+            <rect class="hotspot-outline" x="380" y="92" width="310" height="398" rx="4" fill="#213844" stroke="#040709" stroke-width="5"/>
+            <rect x="388" y="98" width="294" height="388" rx="2" fill="none" stroke="#67e8f9" stroke-opacity="0.14" stroke-width="1.5"/>
+            <rect x="404" y="114" width="262" height="376" fill="url(#v1DoorSteel)" stroke="#040709" stroke-width="3.5"/>
             <line x1="535" y1="114" x2="535" y2="490" stroke="#040709" stroke-width="5"/>
             <rect x="428" y="148" width="84" height="102" rx="4" fill="#09151a" stroke="#040709" stroke-width="3"/>
             <rect x="558" y="148" width="84" height="102" rx="4" fill="#09151a" stroke="#040709" stroke-width="3"/>
+            <!-- Refleksi Kaca Tingkap Pintu -->
+            <polygon points="434,154 468,154 434,218" fill="#bae6fd" opacity="0.1"/>
+            <polygon points="564,154 598,154 564,218" fill="#bae6fd" opacity="0.1"/>
             <line x1="428" y1="199" x2="512" y2="199" stroke="#1d3540" stroke-width="2"/>
             <line x1="470" y1="148" x2="470" y2="250" stroke="#1d3540" stroke-width="2"/>
             <line x1="558" y1="199" x2="642" y2="199" stroke="#1d3540" stroke-width="2"/>
             <line x1="600" y1="148" x2="600" y2="250" stroke="#1d3540" stroke-width="2"/>
+            <!-- Ribet Logam Bingkai Pintu -->
+            <circle cx="392" cy="108" r="3" fill="#6c8792"/><circle cx="678" cy="108" r="3" fill="#6c8792"/>
+            <circle cx="392" cy="474" r="3" fill="#6c8792"/><circle cx="678" cy="474" r="3" fill="#6c8792"/>
             <rect x="485" y="102" width="100" height="22" rx="3" fill="#324650" stroke="#040709" stroke-width="3"/>
-            <circle cx="502" cy="113" r="4" fill="${doorOpen ? '#4ade80' : '#ef4444'}"/>
-            <circle cx="568" cy="113" r="4" fill="${doorOpen ? '#4ade80' : '#ef4444'}"/>
+            <circle cx="502" cy="113" r="4.5" fill="${doorOpen ? '#4ade80' : '#ef4444'}"/>
+            <circle cx="568" cy="113" r="4.5" fill="${doorOpen ? '#4ade80' : '#ef4444'}"/>
             <rect x="372" y="280" width="326" height="40" rx="4" fill="#324650" stroke="#040709" stroke-width="4"/>
+            <line x1="376" y1="284" x2="694" y2="284" stroke="#9bb3bd" stroke-opacity="0.28" stroke-width="2"/>
             <rect x="488" y="270" width="94" height="60" rx="6" fill="#21313a" stroke="#040709" stroke-width="4"/>
             <circle cx="535" cy="300" r="12" fill="${doorOpen ? '#10b981' : '#dc3545'}" stroke="#040709" stroke-width="3"/>
             <rect x="472" y="42" width="126" height="36" rx="4" fill="${doorOpen ? '#0f5132' : '#7f1d1d'}" stroke="#040709" stroke-width="3.5"/>
@@ -3343,17 +3713,18 @@ function renderRoomSVG(viewId) {
           </g>
 
           <!-- Hotspot 2: Peti Fius Voltan Tinggi & Pengawal EC (3 Keadaan Visual) -->
-          <g class="hotspot" data-hotspot="v1_fuse_box" tabindex="0" role="button" aria-label="Periksa Kotak Fius dan Pengawal EC">
-            <rect class="hotspot-outline" x="128" y="138" width="168" height="205" rx="6" fill="#223742" stroke="#040709" stroke-width="4.5"/>
+          <g class="hotspot" data-hotspot="v1_fuse_box" tabindex="0" role="button" aria-label="Periksa Kotak Fius dan Pengawal EC" filter="url(#v1Shadow)">
+            <rect class="hotspot-outline" x="128" y="138" width="168" height="205" rx="6" fill="#243c48" stroke="#040709" stroke-width="4.5"/>
+            <line x1="134" y1="142" x2="290" y2="142" stroke="#9bb3bd" stroke-opacity="0.25" stroke-width="2"/>
             ${
               !fuseOpened
                 ? `
               <rect x="142" y="152" width="140" height="177" rx="3" fill="#182932" stroke="#040709" stroke-width="3"/>
               <!-- 4 Skru Keselamatan Penutup Fius -->
-              <circle cx="152" cy="162" r="4.5" fill="#9bb3bd" stroke="#040709" stroke-width="1.8"/>
-              <circle cx="272" cy="162" r="4.5" fill="#9bb3bd" stroke="#040709" stroke-width="1.8"/>
-              <circle cx="152" cy="319" r="4.5" fill="#9bb3bd" stroke="#040709" stroke-width="1.8"/>
-              <circle cx="272" cy="319" r="4.5" fill="#9bb3bd" stroke="#040709" stroke-width="1.8"/>
+              <circle cx="152" cy="162" r="4.5" fill="#cbd5e1" stroke="#040709" stroke-width="1.8"/>
+              <circle cx="272" cy="162" r="4.5" fill="#cbd5e1" stroke="#040709" stroke-width="1.8"/>
+              <circle cx="152" cy="319" r="4.5" fill="#cbd5e1" stroke="#040709" stroke-width="1.8"/>
+              <circle cx="272" cy="319" r="4.5" fill="#cbd5e1" stroke="#040709" stroke-width="1.8"/>
               <polygon points="212,175 244,230 180,230" fill="#d99b38" stroke="#040709" stroke-width="3"/>
               <path d="M214 190 L205 210 L214 210 L208 224 L222 204 L213 204 Z" fill="#05080a"/>
               <rect x="256" y="226" width="18" height="38" rx="3" fill="#3a525e" stroke="#040709" stroke-width="2.5"/>
@@ -3363,10 +3734,8 @@ function renderRoomSVG(viewId) {
                 : `
               <!-- Bahagian Dalam Kotak Fius Terbuka -->
               <rect x="142" y="152" width="140" height="177" rx="3" fill="#0b151a" stroke="#040709" stroke-width="3"/>
-              <!-- Pendawaian Dalaman -->
               <path d="M168 156 L168 202 M256 156 L256 202" stroke="#d98238" stroke-width="4" stroke-linecap="round"/>
               <path d="M168 242 L168 265 M256 242 L256 265" stroke="#2ea877" stroke-width="3.5" stroke-linecap="round"/>
-              <!-- Soket Fius 30A -->
               <rect x="162" y="196" width="100" height="44" rx="4" fill="#182a33" stroke="#040709" stroke-width="2.5"/>
               ${
                 fusePowered
@@ -3375,7 +3744,6 @@ function renderRoomSVG(viewId) {
                 <rect x="174" y="205" width="16" height="26" rx="2" fill="#e2e8f0" stroke="#040709" stroke-width="2"/>
                 <rect x="234" y="205" width="16" height="26" rx="2" fill="#e2e8f0" stroke="#040709" stroke-width="2"/>
                 <text x="212" y="222" text-anchor="middle" fill="#05080a" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">30A ON</text>
-                <!-- Skrin Pengawal EC Aktif -->
                 <rect x="154" y="264" width="116" height="52" rx="4" fill="#0f2c27" stroke="#6ee7b7" stroke-width="2"/>
                 <text x="212" y="284" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">PENGAWAL EC</text>
                 <text x="212" y="304" text-anchor="middle" fill="#fef08a" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700">${doorOpen ? '1.8 mS/cm OK' : `${Number(gameState.flags.ecValue || 0.5).toFixed(1)} mS/cm`}</text>
@@ -3398,15 +3766,20 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
-          <!-- Meja Sisi Kiri (Menempatkan Kunci Tembaga Kecil & Fail) -->
-          <g>
-            <rect x="52" y="392" width="286" height="24" rx="3" fill="url(#v1DeskGrad)" stroke="#040709" stroke-width="4"/>
+          <!-- Meja Keluli Tahan Karat Sisi Kiri (Fail & Botol Reagen Kaca) -->
+          <g filter="url(#v1Shadow)">
+            <rect x="52" y="392" width="286" height="24" rx="3" fill="url(#v1SteelBench)" stroke="#040709" stroke-width="4"/>
+            <line x1="56" y1="396" x2="334" y2="396" stroke="#bae6fd" stroke-opacity="0.32" stroke-width="2"/>
             <rect x="74" y="416" width="24" height="106" fill="#13222a" stroke="#040709" stroke-width="3.5"/>
             <rect x="292" y="416" width="24" height="106" fill="#13222a" stroke="#040709" stroke-width="3.5"/>
             <rect x="108" y="416" width="174" height="58" fill="#182b34" stroke="#040709" stroke-width="3"/>
             <rect x="84" y="366" width="88" height="26" rx="2" fill="#e7dcc3" stroke="#040709" stroke-width="3"/>
             <rect x="110" y="358" width="36" height="10" rx="2" fill="#3a525e" stroke="#040709" stroke-width="2.5"/>
-            <path d="M196 346 L216 346 L226 392 L186 392 Z" fill="#2a7f8e" fill-opacity="0.65" stroke="#040709" stroke-width="3"/>
+            <!-- Kelalang Kaca Kon dengan Cecair & Kilauan Specular -->
+            <path d="M196 346 L216 346 L226 392 L186 392 Z" fill="#2a7f8e" fill-opacity="0.4" stroke="#040709" stroke-width="3"/>
+            <path d="M191 372 L221 372 L225 390 L187 390 Z" fill="#38bdf8" fill-opacity="0.45"/>
+            <ellipse cx="206" cy="372" rx="15" ry="3" fill="#7ee0eb" fill-opacity="0.6"/>
+            <line x1="199" y1="351" x2="194" y2="386" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2" stroke-linecap="round"/>
           </g>
 
           <!-- Hotspot 3: Kunci Tembaga Kecil Berkilau di Bucu Meja Sisi -->
@@ -3415,7 +3788,7 @@ function renderRoomSVG(viewId) {
               ? ''
               : `
           <g class="hotspot" data-hotspot="v1_copper_key" tabindex="0" role="button" aria-label="Ambil Kunci Tembaga Kecil di bucu meja">
-            <circle cx="294" cy="382" r="24" fill="#f2b749" fill-opacity="0.2"/>
+            <circle cx="294" cy="382" r="24" fill="#f2b749" fill-opacity="0.22"/>
             <g class="hotspot-outline" stroke="#040709" stroke-width="2.8" transform="translate(274, 368) rotate(-14 20 14)">
               <circle cx="10" cy="14" r="8" fill="#d98238"/>
               <circle cx="10" cy="14" r="3" fill="#0d181e"/>
@@ -3433,9 +3806,10 @@ function renderRoomSVG(viewId) {
           }
 
           <!-- Hotspot 4: Panel Kawalan Makmal Agro (Kanan Pintu) -->
-          <g class="hotspot" data-hotspot="v1_control_panel" tabindex="0" role="button" aria-label="Periksa Panel Kawalan Makmal Agro">
-            <rect class="hotspot-outline" x="728" y="210" width="124" height="170" rx="8" fill="#1d3540" stroke="#040709" stroke-width="4.5"/>
-            <rect x="744" y="228" width="92" height="58" rx="3" fill="#0a161b" stroke="#040709" stroke-width="2.5"/>
+          <g class="hotspot" data-hotspot="v1_control_panel" tabindex="0" role="button" aria-label="Periksa Panel Kawalan Makmal Agro" filter="url(#v1Shadow)">
+            <rect class="hotspot-outline" x="728" y="210" width="124" height="170" rx="8" fill="#1e3743" stroke="#040709" stroke-width="4.5"/>
+            <rect x="744" y="228" width="92" height="58" rx="3" fill="#081318" stroke="#040709" stroke-width="2.5"/>
+            <line x1="747" y1="232" x2="778" y2="232" stroke="#7ee0eb" stroke-opacity="0.3" stroke-width="1.5"/>
             <text x="790" y="253" text-anchor="middle" fill="#7ee0eb" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">EC PINTU</text>
             <text x="790" y="272" text-anchor="middle" fill="${doorOpen ? '#4ade80' : fusePowered ? '#f2b749' : '#ff7b89'}" font-family="JetBrains Mono, monospace" font-size="11">${doorOpen ? 'NYAHAKTIF' : fusePowered ? 'SEDIA EC' : 'SEKAT'}</text>
             <g fill="#2b4854" stroke="#040709" stroke-width="2">
@@ -3479,34 +3853,58 @@ function renderRoomSVG(viewId) {
         lcdText = treated.s3 || gameState.puzzles.soilCabinet ? '6.2' : '7.9';
         lcdColor = treated.s3 || gameState.puzzles.soilCabinet ? '#4ade80' : '#f2b749';
       }
+      const probeTargetX = phSample === 's3' ? 312 : phSample === 's2' ? 204 : phSample === 's1' ? 96 : 354;
+      const probeImmersed = phSample === 's1' || phSample === 's2' || phSample === 's3';
       const secretOpen = gameState.secretRoomUnlocked;
 
       return `
         <svg viewBox="0 0 1120 630" class="room-svg" aria-label="Bilik 2: Meja Kerja dan Dinding Carta Tanah">
           <defs>
+            <pattern id="v2LabTiles" width="56" height="36" patternUnits="userSpaceOnUse">
+              <rect width="56" height="36" fill="none" stroke="#1a3440" stroke-width="1" stroke-opacity="0.42"/>
+            </pattern>
+            <linearGradient id="v2LightCone" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#a5f3fc" stop-opacity="0.14"/>
+              <stop offset="100%" stop-color="#070c0f" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="v2BenchSteel" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#1b303a"/>
+              <stop offset="50%" stop-color="#2e4d5c"/>
+              <stop offset="100%" stop-color="#15262e"/>
+            </linearGradient>
             <radialGradient id="v2BenchLight" cx="420" cy="340" r="460" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#2a7f8e" stop-opacity="0.26"/>
+              <stop offset="0%" stop-color="#2a7f8e" stop-opacity="0.28"/>
               <stop offset="100%" stop-color="#070c0f" stop-opacity="0"/>
             </radialGradient>
             <radialGradient id="v2SecretGlow" cx="890" cy="310" r="220" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#2ea877" stop-opacity="0.45"/>
+              <stop offset="0%" stop-color="#2ea877" stop-opacity="0.48"/>
               <stop offset="100%" stop-color="#070c0f" stop-opacity="0"/>
             </radialGradient>
+            <filter id="v2Shadow" x="-10%" y="-10%" width="120%" height="125%">
+              <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#020507" flood-opacity="0.6"/>
+            </filter>
           </defs>
-          <rect width="1120" height="630" fill="#101e26"/>
+          <rect width="1120" height="630" fill="#0f1d25"/>
+          <rect x="0" y="0" width="1120" height="515" fill="url(#v2LabTiles)"/>
+          <polygon points="160,22 580,22 650,415 90,415" fill="url(#v2LightCone)"/>
+          <rect x="160" y="6" width="420" height="16" rx="4" fill="#213844" stroke="#040709" stroke-width="3"/>
+          <rect x="178" y="16" width="384" height="6" rx="2" fill="#cffafe" opacity="0.82"/>
           <rect width="1120" height="630" fill="url(#v2BenchLight)"/>
           ${secretOpen ? '<rect width="1120" height="630" fill="url(#v2SecretGlow)"/>' : ''}
 
-          <!-- Lantai & Garis Dinding Kanan -->
+          <!-- Lantai & Garis Dinding -->
           <polygon points="0,515 1120,515 1120,630 0,630" fill="#0a1318" stroke="#040709" stroke-width="4"/>
 
-          <!-- Meja Kerja Makmal (Kiri hingga Tengah-Kanan) -->
+          <!-- Meja Kerja Keluli Tahan Karat -->
           <rect x="18" y="405" width="690" height="225" fill="#172a34" stroke="#040709" stroke-width="5"/>
-          <line x1="18" y1="422" x2="708" y2="422" stroke="#0c171d" stroke-width="3"/>
+          <rect x="20" y="407" width="686" height="18" fill="url(#v2BenchSteel)"/>
+          <line x1="20" y1="410" x2="706" y2="410" stroke="#bae6fd" stroke-opacity="0.28" stroke-width="2"/>
+          <line x1="18" y1="425" x2="708" y2="425" stroke="#060c0f" stroke-width="3"/>
 
           <!-- Hotspot 1: Carta Segitiga Tekstur Tanah USDA (Dinding Kiri) -->
-          <g class="hotspot" data-hotspot="v2_soil_chart" tabindex="0" role="button" aria-label="Periksa Carta Segitiga Tekstur Tanah USDA">
+          <g class="hotspot" data-hotspot="v2_soil_chart" tabindex="0" role="button" aria-label="Periksa Carta Segitiga Tekstur Tanah USDA" filter="url(#v2Shadow)">
             <rect class="hotspot-outline" x="48" y="54" width="286" height="240" rx="6" fill="#e7dcc3" stroke="#040709" stroke-width="5"/>
+            <rect x="56" y="62" width="270" height="224" rx="3" fill="none" stroke="#92400e" stroke-opacity="0.25" stroke-width="1.5"/>
             <text x="191" y="82" text-anchor="middle" fill="#10252d" font-family="Fraunces, serif" font-size="14" font-weight="700">SEGITIGA TEKSTUR TANAH USDA</text>
             <polygon points="191,104 100,254 282,254" fill="#d4c39e" stroke="#040709" stroke-width="3"/>
             <line x1="145" y1="179" x2="237" y2="179" stroke="#1b4652" stroke-width="2"/>
@@ -3523,17 +3921,23 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
-          <!-- Hotspot 2: Kabinet Sampel Tanah & Pengapuran (Dinding Tengah) -->
-          <g class="hotspot" data-hotspot="v2_soil_cabinet" tabindex="0" role="button" aria-label="Periksa Kabinet Sampel Tanah dan Pengapuran">
+          <!-- Hotspot 2: Kabinet Sampel Tanah & Bekas Kaca Reagen -->
+          <g class="hotspot" data-hotspot="v2_soil_cabinet" tabindex="0" role="button" aria-label="Periksa Kabinet Sampel Tanah dan Pengapuran" filter="url(#v2Shadow)">
             <rect class="hotspot-outline" x="364" y="60" width="292" height="292" rx="6" fill="#1b323d" stroke="#040709" stroke-width="5"/>
             <rect x="382" y="80" width="256" height="114" fill="#0c181e" stroke="#040709" stroke-width="3"/>
-            <!-- Beg Kapur Pertanian GML & Bahan Kimia di Rak -->
-            <rect x="398" y="106" width="60" height="78" rx="4" fill="#e7dcc3" stroke="#040709" stroke-width="3"/>
+            <!-- Botol Reagen Kaca GML, Sulfur & Urea dengan Kilauan Kaca -->
+            <rect x="398" y="106" width="60" height="78" rx="5" fill="#e7dcc3" stroke="#040709" stroke-width="3"/>
+            <rect x="412" y="96" width="32" height="11" rx="2" fill="#3a525e" stroke="#040709" stroke-width="2"/>
+            <line x1="406" y1="112" x2="406" y2="176" stroke="#ffffff" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
             <text x="428" y="142" text-anchor="middle" fill="#10252d" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">GML</text>
             <text x="428" y="159" text-anchor="middle" fill="#1b4652" font-size="9" font-weight="700">KAPUR</text>
-            <rect x="476" y="114" width="48" height="70" rx="4" fill="#d99b38" stroke="#040709" stroke-width="3"/>
+            <rect x="476" y="114" width="48" height="70" rx="5" fill="#d99b38" stroke="#040709" stroke-width="3"/>
+            <rect x="488" y="104" width="24" height="10" rx="2" fill="#1f2937" stroke="#040709" stroke-width="2"/>
+            <line x1="484" y1="120" x2="484" y2="176" stroke="#fef3c7" stroke-opacity="0.45" stroke-width="2.5" stroke-linecap="round"/>
             <text x="500" y="154" text-anchor="middle" fill="#05080a" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">S</text>
-            <rect x="542" y="110" width="52" height="74" rx="4" fill="#2a7f8e" stroke="#040709" stroke-width="3"/>
+            <rect x="542" y="110" width="52" height="74" rx="5" fill="#2a7f8e" stroke="#040709" stroke-width="3"/>
+            <rect x="554" y="100" width="28" height="10" rx="2" fill="#e2e8f0" stroke="#040709" stroke-width="2"/>
+            <line x1="550" y1="116" x2="550" y2="176" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2.5" stroke-linecap="round"/>
             <text x="568" y="152" text-anchor="middle" fill="#e6eff2" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">UREA</text>
             <!-- Laci Kabinet Berkunci Digital pH -->
             <rect x="382" y="210" width="256" height="124" rx="4" fill="#23404e" stroke="#040709" stroke-width="3.5"/>
@@ -3553,7 +3957,6 @@ function renderRoomSVG(viewId) {
             secretOpen
               ? `
           <g class="hotspot" data-hotspot="v2_secret_doorway" tabindex="0" role="button" aria-label="Masuk ke Bilik Rahsia Makmal Agro (Bilik 5)">
-            <!-- Pintu Laluan Rahsia Bercahaya Zamrud/Teal -->
             <rect class="hotspot-outline" x="772" y="92" width="218" height="423" rx="4" fill="#082420" stroke="#2ea877" stroke-width="4.5"/>
             <rect x="790" y="110" width="182" height="405" fill="#061918" stroke="#040709" stroke-width="3"/>
             <polygon points="815,515 948,515 922,360 842,360" fill="#134e44" opacity="0.72"/>
@@ -3566,7 +3969,6 @@ function renderRoomSVG(viewId) {
               <text x="881" y="73" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="700">Masuk Bilik Rahsia ▸</text>
             </g>
           </g>
-          <!-- Rak Buku yang telah bergeser ke tepi kanan -->
           <g transform="translate(216, 0)" opacity="0.95">
             <rect x="776" y="88" width="220" height="427" rx="4" fill="#1d323c" stroke="#040709" stroke-width="5"/>
             <rect x="792" y="112" width="188" height="104" fill="#0e1b22" stroke="#040709" stroke-width="3"/>
@@ -3577,43 +3979,34 @@ function renderRoomSVG(viewId) {
           </g>
           `
               : `
-          <g class="hotspot" data-hotspot="v2_secret_bookshelf" tabindex="0" role="button" aria-label="Periksa Rak Buku Rahsia dan Panel Kod Tanah">
-            <!-- Panel Kunci Biometrik / Kod Tekstur Tanah di Kiri Rak -->
-            <rect x="716" y="220" width="52" height="110" rx="5" fill="#1a2c35" stroke="#040709" stroke-width="3.5"/>
-            <rect x="724" y="234" width="36" height="26" rx="2" fill="#081014" stroke="#040709" stroke-width="2"/>
-            <circle cx="742" cy="247" r="5" fill="#dc3545"/>
-            <rect x="726" y="272" width="32" height="42" rx="2" fill="#294452" stroke="#040709" stroke-width="2"/>
-            <polygon points="742,280 753,304 731,304" fill="#d99b38" stroke="#040709" stroke-width="1.8"/>
-
-            <!-- Rak Buku Keluli Berat Tertutup -->
+          <g class="hotspot hotspot-locked-bookshelf" data-hotspot="v2_secret_bookshelf" tabindex="-1" role="button" aria-label="Rak Buku Makmal">
             <rect class="hotspot-outline" x="776" y="88" width="270" height="427" rx="4" fill="#1d323c" stroke="#040709" stroke-width="5"/>
             <rect x="794" y="112" width="234" height="104" fill="#0e1b22" stroke="#040709" stroke-width="3"/>
             <rect x="794" y="232" width="234" height="104" fill="#0e1b22" stroke="#040709" stroke-width="3"/>
             <rect x="794" y="352" width="234" height="126" fill="#0e1b22" stroke="#040709" stroke-width="3"/>
-            <!-- Buku & Bekas Spesimen di Rak -->
             <rect x="810" y="138" width="24" height="68" fill="#8b4d2b" stroke="#040709" stroke-width="2"/>
             <rect x="838" y="128" width="26" height="78" fill="#2a7f8e" stroke="#040709" stroke-width="2"/>
-            <rect x="868" y="142" width="22" height="64" fill="#d99b38" stroke="#040709" stroke-width="2"/>
+            <rect x="868" y="142" width="22" height="64" fill="#a87932" stroke="#040709" stroke-width="2"/>
             <rect x="920" y="134" width="30" height="72" fill="#234f5e" stroke="#040709" stroke-width="2"/>
             <rect x="814" y="256" width="34" height="70" fill="#7f1d1d" stroke="#040709" stroke-width="2"/>
             <rect x="854" y="264" width="24" height="62" fill="#1e544a" stroke="#040709" stroke-width="2"/>
             <rect x="935" y="276" width="66" height="50" rx="4" fill="#2b4552" stroke="#040709" stroke-width="2.5"/>
             <rect x="816" y="392" width="70" height="76" rx="4" fill="#1b3945" stroke="#040709" stroke-width="2.5"/>
             <rect x="904" y="402" width="96" height="66" rx="4" fill="#142b34" stroke="#040709" stroke-width="2.5"/>
-            <g class="hotspot-hint-tag">
-              <rect x="782" y="50" width="258" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
-              <text x="911" y="69" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">Rak Buku Rahsia (Kunci Tanah)</text>
-            </g>
           </g>
           `
           }
 
-          <!-- Hotspot 3, 4, 5: 3 Bikar Kaca Sampel Tanah atas Meja Kerja -->
+          <!-- Hotspot 3, 4, 5: 3 Bikar Kaca Bersenggat Sampel Tanah dengan Refleksi & Meniskus -->
           <!-- Bikar 1: Tanah Gambut -->
           <g class="hotspot" data-hotspot="v2_beaker_1" tabindex="0" role="button" aria-label="Periksa Sampel 1: Tanah Gambut">
-            <rect class="hotspot-outline" x="58" y="348" width="76" height="106" rx="6" fill="rgba(126,224,235,0.16)" stroke="#040709" stroke-width="3.5"/>
-            <path d="M62 404 Q96 396 130 404 L130 450 L62 450 Z" fill="#2c1d16" stroke="#040709" stroke-width="2"/>
+            <rect class="hotspot-outline" x="58" y="348" width="76" height="106" rx="6" fill="rgba(165,243,252,0.16)" stroke="#040709" stroke-width="3.5"/>
+            <path d="M62 396 Q96 389 130 396 L130 450 L62 450 Z" fill="#2c1d16" stroke="#040709" stroke-width="2"/>
+            <ellipse cx="96" cy="396" rx="34" ry="4" fill="#5c4033" fill-opacity="0.72"/>
             <circle cx="82" cy="428" r="4" fill="#180f0b"/><circle cx="110" cy="420" r="5" fill="#3f2b21"/>
+            <line x1="68" y1="358" x2="68" y2="442" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="118" y1="376" x2="127" y2="376" stroke="#bae6fd" stroke-opacity="0.45" stroke-width="1.5"/>
+            <line x1="118" y1="392" x2="127" y2="392" stroke="#bae6fd" stroke-opacity="0.45" stroke-width="1.5"/>
             <rect x="52" y="460" width="88" height="30" rx="3" fill="#e7dcc3" stroke="#040709" stroke-width="2.5"/>
             <text x="96" y="474" text-anchor="middle" fill="#10252d" font-size="9.5" font-weight="700">SAMPEL 1</text>
             <text x="96" y="485" text-anchor="middle" fill="#1b4652" font-size="9" font-weight="700">Tanah Gambut</text>
@@ -3625,9 +4018,13 @@ function renderRoomSVG(viewId) {
 
           <!-- Bikar 2: Tanah Aluvium -->
           <g class="hotspot" data-hotspot="v2_beaker_2" tabindex="0" role="button" aria-label="Periksa Sampel 2: Tanah Aluvium">
-            <rect class="hotspot-outline" x="166" y="348" width="76" height="106" rx="6" fill="rgba(126,224,235,0.16)" stroke="#040709" stroke-width="3.5"/>
-            <path d="M170 402 Q204 395 238 402 L238 450 L170 450 Z" fill="#6d4c34" stroke="#040709" stroke-width="2"/>
+            <rect class="hotspot-outline" x="166" y="348" width="76" height="106" rx="6" fill="rgba(165,243,252,0.16)" stroke="#040709" stroke-width="3.5"/>
+            <path d="M170 396 Q204 389 238 396 L238 450 L170 450 Z" fill="#6d4c34" stroke="#040709" stroke-width="2"/>
+            <ellipse cx="204" cy="396" rx="34" ry="4" fill="#9a7254" fill-opacity="0.72"/>
             <circle cx="188" cy="424" r="4" fill="#543825"/><circle cx="218" cy="432" r="4" fill="#825d42"/>
+            <line x1="176" y1="358" x2="176" y2="442" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="226" y1="376" x2="235" y2="376" stroke="#bae6fd" stroke-opacity="0.45" stroke-width="1.5"/>
+            <line x1="226" y1="392" x2="235" y2="392" stroke="#bae6fd" stroke-opacity="0.45" stroke-width="1.5"/>
             <rect x="160" y="460" width="88" height="30" rx="3" fill="#e7dcc3" stroke="#040709" stroke-width="2.5"/>
             <text x="204" y="474" text-anchor="middle" fill="#10252d" font-size="9.5" font-weight="700">SAMPEL 2</text>
             <text x="204" y="485" text-anchor="middle" fill="#1b4652" font-size="9" font-weight="700">Tanah Aluvium</text>
@@ -3639,9 +4036,13 @@ function renderRoomSVG(viewId) {
 
           <!-- Bikar 3: Tanah Berkapur -->
           <g class="hotspot" data-hotspot="v2_beaker_3" tabindex="0" role="button" aria-label="Periksa Sampel 3: Tanah Berkapur">
-            <rect class="hotspot-outline" x="274" y="348" width="76" height="106" rx="6" fill="rgba(126,224,235,0.16)" stroke="#040709" stroke-width="3.5"/>
-            <path d="M278 404 Q312 397 346 404 L346 450 L278 450 Z" fill="#cec5ae" stroke="#040709" stroke-width="2"/>
+            <rect class="hotspot-outline" x="274" y="348" width="76" height="106" rx="6" fill="rgba(165,243,252,0.16)" stroke="#040709" stroke-width="3.5"/>
+            <path d="M278 396 Q312 389 346 396 L346 450 L278 450 Z" fill="#cec5ae" stroke="#040709" stroke-width="2"/>
+            <ellipse cx="312" cy="396" rx="34" ry="4" fill="#efe8d5" fill-opacity="0.72"/>
             <circle cx="296" cy="426" r="4" fill="#b3a88e"/><circle cx="326" cy="420" r="5" fill="#e2dac6"/>
+            <line x1="284" y1="358" x2="284" y2="442" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="334" y1="376" x2="343" y2="376" stroke="#bae6fd" stroke-opacity="0.45" stroke-width="1.5"/>
+            <line x1="334" y1="392" x2="343" y2="392" stroke="#bae6fd" stroke-opacity="0.45" stroke-width="1.5"/>
             <rect x="268" y="460" width="88" height="30" rx="3" fill="#e7dcc3" stroke="#040709" stroke-width="2.5"/>
             <text x="312" y="474" text-anchor="middle" fill="#10252d" font-size="9.5" font-weight="700">SAMPEL 3</text>
             <text x="312" y="485" text-anchor="middle" fill="#1b4652" font-size="9" font-weight="700">Tanah Berkapur</text>
@@ -3651,15 +4052,29 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
+          <!-- Prob Kaca Terkalibrasi Terendam Dalam Bikar Sampel Aktif -->
+          ${
+            probeImmersed
+              ? `
+            <g pointer-events="none">
+              <path d="M384 378 C362 325, ${probeTargetX + 24} 320, ${probeTargetX} 344" fill="none" stroke="#040709" stroke-width="3.5" stroke-linecap="round"/>
+              <rect x="${probeTargetX - 4}" y="340" width="8" height="66" rx="3" fill="#99e2eb" fill-opacity="0.8" stroke="#040709" stroke-width="2"/>
+              <rect x="${probeTargetX - 6}" y="334" width="12" height="10" rx="2" fill="#d99b38" stroke="#040709" stroke-width="2"/>
+              <circle cx="${probeTargetX}" cy="408" r="4" fill="#6ee7b7" stroke="#040709" stroke-width="1.5"/>
+            </g>
+          `
+              : ''
+          }
+
           <!-- Hotspot 6: Meter pH Digital dengan Skrin LCD -->
-          <g class="hotspot" data-hotspot="v2_ph_meter" tabindex="0" role="button" aria-label="Gunakan Meter pH Digital">
+          <g class="hotspot" data-hotspot="v2_ph_meter" tabindex="0" role="button" aria-label="Gunakan Meter pH Digital" filter="url(#v2Shadow)">
             <rect class="hotspot-outline" x="384" y="342" width="114" height="136" rx="8" fill="#223b47" stroke="#040709" stroke-width="4.5"/>
             <rect x="398" y="356" width="86" height="50" rx="4" fill="#122723" stroke="#040709" stroke-width="2.5"/>
             <text x="441" y="373" text-anchor="middle" fill="#9bb3bd" font-family="JetBrains Mono, monospace" font-size="9.5">METER pH</text>
             <text x="441" y="396" text-anchor="middle" fill="${lcdColor}" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700">${lcdText}</text>
             <circle cx="418" cy="430" r="9" fill="#d99b38" stroke="#040709" stroke-width="2.5"/>
             <circle cx="464" cy="430" r="9" fill="#2a7f8e" stroke="#040709" stroke-width="2.5"/>
-            <path d="M384 446 Q362 458 354 428" fill="none" stroke="#040709" stroke-width="3.5" stroke-linecap="round"/>
+            ${probeImmersed ? '' : '<path d="M384 446 Q362 458 354 428" fill="none" stroke="#040709" stroke-width="3.5" stroke-linecap="round"/>'}
             <g class="hotspot-hint-tag">
               <rect x="356" y="306" width="170" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
               <text x="441" y="325" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">Meja Meter pH Digital</text>
@@ -3758,26 +4173,47 @@ function renderRoomSVG(viewId) {
       return `
         <svg viewBox="0 0 1120 630" class="room-svg" aria-label="Bilik 3: Sudut Mikroskop dan Botani">
           <defs>
-            <radialGradient id="v3ScopeLight" cx="225" cy="300" r="280" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#7ee0eb" stop-opacity="0.24"/>
+            <pattern id="v3LabTiles" width="56" height="36" patternUnits="userSpaceOnUse">
+              <rect width="56" height="36" fill="none" stroke="#193340" stroke-width="1" stroke-opacity="0.4"/>
+            </pattern>
+            <radialGradient id="v3ScopeLight" cx="225" cy="300" r="300" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#7ee0eb" stop-opacity="0.3"/>
               <stop offset="100%" stop-color="#081014" stop-opacity="0"/>
             </radialGradient>
+            <linearGradient id="v3LightCone" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.14"/>
+              <stop offset="100%" stop-color="#081014" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="v3BenchSteel" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#192e38"/>
+              <stop offset="48%" stop-color="#304e5d"/>
+              <stop offset="100%" stop-color="#15262e"/>
+            </linearGradient>
+            <filter id="v3Shadow" x="-10%" y="-10%" width="120%" height="125%">
+              <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#020507" flood-opacity="0.62"/>
+            </filter>
           </defs>
           <rect width="1120" height="630" fill="#0d1b22"/>
+          <rect x="0" y="0" width="1120" height="425" fill="url(#v3LabTiles)"/>
+          <polygon points="105,22 390,22 465,425 40,425" fill="url(#v3LightCone)"/>
+          <rect x="105" y="6" width="285" height="16" rx="4" fill="#213844" stroke="#040709" stroke-width="3"/>
+          <rect x="120" y="16" width="255" height="6" rx="2" fill="#cffafe" opacity="0.82"/>
           <rect width="1120" height="630" fill="url(#v3ScopeLight)"/>
 
-          <!-- Meja Kerja Botani -->
+          <!-- Meja Kerja Keluli Tahan Karat Botani -->
           <rect x="0" y="425" width="1120" height="205" fill="#15262e" stroke="#040709" stroke-width="5"/>
-          <line x1="0" y1="442" x2="1120" y2="442" stroke="#0b151a" stroke-width="3"/>
+          <rect x="0" y="427" width="1120" height="18" fill="url(#v3BenchSteel)"/>
+          <line x1="0" y1="430" x2="1120" y2="430" stroke="#bae6fd" stroke-opacity="0.28" stroke-width="2"/>
+          <line x1="0" y1="445" x2="1120" y2="445" stroke="#071014" stroke-width="3"/>
 
           <!-- Hotspot 1: Mikroskop Kompaun & Slaid Keratan Batang -->
-          <g class="hotspot" data-hotspot="v3_microscope" tabindex="0" role="button" aria-label="Periksa Mikroskop Cahaya Kompaun">
+          <g class="hotspot" data-hotspot="v3_microscope" tabindex="0" role="button" aria-label="Periksa Mikroskop Cahaya Kompaun" filter="url(#v3Shadow)">
             <rect class="hotspot-outline" x="125" y="410" width="166" height="32" rx="4" fill="#2c4855" stroke="#040709" stroke-width="4"/>
             <path class="hotspot-outline" d="M188 410 C138 338 144 224 214 182 L244 202 C190 242 190 340 226 410 Z" fill="#3b5e6e" stroke="#040709" stroke-width="4"/>
-            <!-- Tiub Okular & Kanta Objektif -->
+            <!-- Tiub Okular Loyang & Kanta Objektif -->
             <rect x="220" y="130" width="32" height="108" rx="3" transform="rotate(24 236 184)" fill="#d99b38" stroke="#040709" stroke-width="3.5"/>
+            <line x1="252" y1="138" x2="230" y2="188" stroke="#fef3c7" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
             <rect x="200" y="252" width="26" height="32" rx="2" fill="#233b47" stroke="#040709" stroke-width="3"/>
-            <!-- Pentas Slaid & Sumber Cahaya -->
             <rect x="172" y="330" width="112" height="14" rx="2" fill="#13242c" stroke="#040709" stroke-width="3"/>
             ${
               slideBoxOpen
@@ -3785,6 +4221,7 @@ function renderRoomSVG(viewId) {
                 : ''
             }
             <circle cx="212" cy="378" r="14" fill="${microSolved ? '#4ade80' : '#7ee0eb'}" stroke="#040709" stroke-width="3"/>
+            <circle cx="208" cy="374" r="4" fill="#ffffff" opacity="0.55"/>
             <circle cx="170" cy="378" r="9" fill="#d99b38" stroke="#040709" stroke-width="2.5"/>
             <g class="hotspot-hint-tag">
               <rect x="115" y="92" width="196" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
@@ -3792,14 +4229,13 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
-          <!-- Hotspot 4: Peti Slaid Botani Berkunci (Kunci Loyang dari Bilik 2) -->
-          <g class="hotspot" data-hotspot="v3_slide_box" tabindex="0" role="button" aria-label="Periksa Peti Slaid Botani">
+          <!-- Hotspot 4: Peti Slaid Botani Berkunci -->
+          <g class="hotspot" data-hotspot="v3_slide_box" tabindex="0" role="button" aria-label="Periksa Peti Slaid Botani" filter="url(#v3Shadow)">
             <rect class="hotspot-outline" x="326" y="362" width="150" height="80" rx="6" fill="${slideBoxOpen ? '#173440' : '#2a3e48'}" stroke="#040709" stroke-width="4.5"/>
             ${
               slideBoxOpen
                 ? `
               <rect x="336" y="372" width="130" height="58" rx="3" fill="#0d1b22" stroke="#040709" stroke-width="3"/>
-              <!-- Dua Slaid Kaca Spesimen X & Y -->
               <rect x="348" y="384" width="48" height="32" rx="2" fill="#99e2eb" fill-opacity="0.72" stroke="#040709" stroke-width="2"/>
               <circle cx="372" cy="400" r="7" fill="#2ea877" stroke="#040709" stroke-width="1.5"/>
               <rect x="406" y="384" width="48" height="32" rx="2" fill="#99e2eb" fill-opacity="0.72" stroke="#040709" stroke-width="2"/>
@@ -3809,7 +4245,6 @@ function renderRoomSVG(viewId) {
             `
                 : `
               <rect x="326" y="362" width="150" height="22" rx="4" fill="#3a525e" stroke="#040709" stroke-width="3"/>
-              <!-- Kunci Loyang -->
               <rect x="386" y="376" width="30" height="26" rx="4" fill="#eab308" stroke="#040709" stroke-width="2.5"/>
               <circle cx="401" cy="389" r="4" fill="#05080a"/>
               <text x="401" y="424" text-anchor="middle" fill="#e7dcc3" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">PETI SLAID</text>
@@ -3821,9 +4256,10 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
-          <!-- Hotspot 2: Poster Anatomi Monokotiledon vs Dikotiledon -->
-          <g class="hotspot" data-hotspot="v3_botany_poster" tabindex="0" role="button" aria-label="Periksa Poster Anatomi Monokotiledon dan Dikotiledon">
-            <rect class="hotspot-outline" x="486" y="68" width="316" height="252" rx="6" fill="#e7dcc3" stroke="#040709" stroke-width="5"/>
+          <!-- Hotspot 2: Poster Anatomi Monokotiledon vs Dikotiledon (Bingkai Berbevel) -->
+          <g class="hotspot" data-hotspot="v3_botany_poster" tabindex="0" role="button" aria-label="Periksa Poster Anatomi Monokotiledon dan Dikotiledon" filter="url(#v3Shadow)">
+            <rect x="480" y="62" width="328" height="264" rx="8" fill="#233742" stroke="#040709" stroke-width="4"/>
+            <rect class="hotspot-outline" x="488" y="70" width="312" height="248" rx="5" fill="#e7dcc3" stroke="#040709" stroke-width="4"/>
             <text x="644" y="100" text-anchor="middle" fill="#10252d" font-family="Fraunces, serif" font-size="16" font-weight="700">MONOKOT vs DIKOT</text>
             <circle cx="566" cy="196" r="56" fill="#c7d6b3" stroke="#040709" stroke-width="3"/>
             <circle cx="548" cy="176" r="6" fill="#1b4652"/><circle cx="584" cy="171" r="6" fill="#1b4652"/>
@@ -3845,25 +4281,33 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
-          <!-- Hotspot 3: Rak Herbarium Spesimen Tumbuhan (Atas) -->
-          <g class="hotspot" data-hotspot="v3_herbarium" tabindex="0" role="button" aria-label="Periksa Rak Spesimen Herbarium">
+          <!-- Hotspot 3: Rak Herbarium dengan Balang Spesimen Kaca & Refleksi -->
+          <g class="hotspot" data-hotspot="v3_herbarium" tabindex="0" role="button" aria-label="Periksa Rak Spesimen Herbarium" filter="url(#v3Shadow)">
             <rect class="hotspot-outline" x="845" y="130" width="205" height="142" rx="6" fill="#192e38" stroke="#040709" stroke-width="5"/>
             <rect x="865" y="148" width="165" height="108" fill="#11222a" stroke="#040709" stroke-width="3"/>
-            <path d="M948 242 L948 168 M948 212 Q918 198 908 178 M948 198 Q978 184 988 166" stroke="#2ea877" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <!-- Balang Spesimen Kiri (Cecair Pengawet Hijau + Refleksi) -->
+            <rect x="880" y="168" width="52" height="78" rx="7" fill="#1b4d46" fill-opacity="0.72" stroke="#040709" stroke-width="2.5"/>
+            <rect x="891" y="159" width="30" height="9" rx="2" fill="#d99b38" stroke="#040709" stroke-width="2"/>
+            <path d="M906 238 L906 184 M906 218 Q892 206 888 194 M906 206 Q922 196 925 184" stroke="#6ee7b7" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+            <line x1="888" y1="176" x2="888" y2="236" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Balang Spesimen Kanan (Cecair Pengawet Ambar + Refleksi) -->
+            <rect x="954" y="162" width="58" height="84" rx="7" fill="#5c4318" fill-opacity="0.65" stroke="#040709" stroke-width="2.5"/>
+            <rect x="966" y="153" width="34" height="9" rx="2" fill="#3a525e" stroke="#040709" stroke-width="2"/>
+            <path d="M983 238 L983 178 M983 212 Q967 198 964 186 M983 200 Q1000 188 1004 176" stroke="#f2b749" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+            <line x1="962" y1="170" x2="962" y2="236" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2.5" stroke-linecap="round"/>
             <g class="hotspot-hint-tag">
               <rect x="862" y="92" width="170" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
               <text x="947" y="111" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">Rak Herbarium</text>
             </g>
           </g>
 
-          <!-- Hotspot 5: Peti Spesimen & Alatan Berkunci (Terbuka selepas Mikroskop selesai) -->
-          <g class="hotspot" data-hotspot="v3_tool_cabinet" tabindex="0" role="button" aria-label="Periksa Peti Spesimen dan Alatan">
+          <!-- Hotspot 5: Peti Spesimen & Alatan Berkunci -->
+          <g class="hotspot" data-hotspot="v3_tool_cabinet" tabindex="0" role="button" aria-label="Periksa Peti Spesimen dan Alatan" filter="url(#v3Shadow)">
             <rect class="hotspot-outline" x="845" y="282" width="205" height="143" rx="6" fill="#192e38" stroke="#040709" stroke-width="5"/>
             <rect x="865" y="298" width="165" height="112" rx="3" fill="${microSolved ? '#0c2321' : '#11222a'}" stroke="#040709" stroke-width="3"/>
             ${
               microSolved
                 ? `
-              <!-- Pintu kaca terbuka ke kiri -->
               <rect x="840" y="296" width="26" height="116" rx="2" fill="#7ee0eb" fill-opacity="0.24" stroke="#040709" stroke-width="2.5"/>
               ${
                 gameState.flags.pickedScrewdriver
@@ -3872,8 +4316,8 @@ function renderRoomSVG(viewId) {
               }
             `
                 : `
-              <!-- Pintu kaca berkunci -->
               <rect x="869" y="302" width="157" height="104" rx="2" fill="#2a7f8e" fill-opacity="0.16" stroke="#040709" stroke-width="2"/>
+              <polygon points="874,306 932,306 874,386" fill="#ffffff" opacity="0.06"/>
               <rect x="912" y="332" width="70" height="44" rx="4" fill="#091318" stroke="#040709" stroke-width="2.5"/>
               <circle cx="947" cy="347" r="5" fill="#dc3545"/>
               <text x="947" y="366" text-anchor="middle" fill="#ff7b89" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700">TERKUNCI</text>
@@ -3911,6 +4355,79 @@ function renderRoomSVG(viewId) {
       const cured = gameState.puzzles.npkCured || { A: false, B: false, C: false };
       const allCured = cured.A && cured.B && cured.C;
       const drawerOpen = gameState.flags.npkDrawerUnlocked;
+      const npkMap = gameState.puzzles.npkAssignments || { A: 'K', B: 'N', C: 'P' };
+
+      const renderNpkPotSVG = (potKey, cx, hintY, nutrient, isCured) => {
+        const hotspotId = `v4_pot_${potKey.toLowerCase()}`;
+        const leafVeins = `
+          <path d="M-2 323 Q-36 314 -64 322 M-28 317 L-40 310 M-46 319 L-56 328" stroke="#040709" stroke-opacity="0.38" stroke-width="1.4" fill="none"/>
+          <path d="M2 315 Q36 306 64 314 M28 309 L40 302 M46 311 L56 320" stroke="#040709" stroke-opacity="0.38" stroke-width="1.4" fill="none"/>
+          <path d="M-2 273 Q-28 258 -50 258" stroke="#040709" stroke-opacity="0.35" stroke-width="1.3" fill="none"/>
+          <path d="M2 265 Q28 250 50 250" stroke="#040709" stroke-opacity="0.35" stroke-width="1.3" fill="none"/>
+          <line x1="0" y1="226" x2="0" y2="192" stroke="#040709" stroke-opacity="0.32" stroke-width="1.3"/>
+        `;
+        let plantBodySVG = '';
+        if (nutrient === 'N') {
+          plantBodySVG = `
+            <path d="M0 352 L0 228" stroke="${isCured ? '#2ea877' : '#85a64a'}" stroke-width="7" stroke-linecap="round"/>
+            <path d="M0 322 Q-53 304 -76 324 Q-43 344 0 328 Z" fill="${isCured ? '#2ea877' : '#e0cc48'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 314 Q52 296 76 316 Q42 338 0 322 Z" fill="${isCured ? '#2ea877' : '#d6bf3c'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 272 Q-40 242 -60 258 Q-32 284 0 278 Z" fill="${isCured ? '#38c78d' : '#a8c256'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 264 Q40 234 60 250 Q32 276 0 270 Z" fill="${isCured ? '#38c78d' : '#a8c256'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 232 Q-14 196 0 182 Q14 196 0 232 Z" fill="${isCured ? '#4ade80' : '#8fb858'}" stroke="#040709" stroke-width="3"/>
+            ${leafVeins}
+          `;
+        } else if (nutrient === 'P') {
+          plantBodySVG = `
+            <path d="M0 352 L0 240" stroke="${isCured ? '#2ea877' : '#6f326b'}" stroke-width="7" stroke-linecap="round"/>
+            <path d="M0 320 Q-50 302 -70 322 Q-40 342 0 326 Z" fill="${isCured ? '#2ea877' : '#85327b'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 312 Q50 294 70 314 Q40 336 0 320 Z" fill="${isCured ? '#2ea877' : '#73266a'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 276 Q-38 250 -56 266 Q-30 288 0 282 Z" fill="${isCured ? '#38c78d' : '#96408b'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 268 Q38 242 56 258 Q30 280 0 274 Z" fill="${isCured ? '#38c78d' : '#85327b'}" stroke="#040709" stroke-width="3"/>
+            <path d="M0 242 Q-12 210 0 198 Q12 210 0 242 Z" fill="${isCured ? '#4ade80' : '#65285e'}" stroke="#040709" stroke-width="3"/>
+            ${leafVeins}
+          `;
+        } else {
+          plantBodySVG = `
+            <path d="M0 352 L0 232" stroke="#2ea877" stroke-width="7" stroke-linecap="round"/>
+            <path d="M0 322 Q-53 304 -76 324 Q-43 344 0 328 Z" fill="#2ea877" stroke="${isCured ? '#040709' : '#b45309'}" stroke-width="${isCured ? '3' : '5'}"/>
+            <path d="M0 314 Q52 296 76 316 Q42 338 0 322 Z" fill="#2ea877" stroke="${isCured ? '#040709' : '#92400e'}" stroke-width="${isCured ? '3' : '5'}"/>
+            ${
+              isCured
+                ? ''
+                : `
+            <circle cx="-72" cy="324" r="6" fill="#78350f" stroke="#040709" stroke-width="2"/>
+            <circle cx="72" cy="316" r="6" fill="#78350f" stroke="#040709" stroke-width="2"/>
+            <circle cx="-56" cy="258" r="5" fill="#92400e" stroke="#040709" stroke-width="2"/>
+            <circle cx="56" cy="250" r="5" fill="#92400e" stroke="#040709" stroke-width="2"/>
+            `
+            }
+            <path d="M0 272 Q-40 242 -60 258 Q-32 284 0 278 Z" fill="#38c78d" stroke="${isCured ? '#040709' : '#92400e'}" stroke-width="${isCured ? '3' : '4.5'}"/>
+            <path d="M0 264 Q40 234 60 250 Q32 276 0 270 Z" fill="#38c78d" stroke="${isCured ? '#040709' : '#b45309'}" stroke-width="${isCured ? '3' : '4.5'}"/>
+            <path d="M0 234 Q-14 198 0 184 Q14 198 0 234 Z" fill="#4ade80" stroke="#040709" stroke-width="3"/>
+            ${leafVeins}
+          `;
+        }
+
+        return `
+          <g class="hotspot" data-hotspot="${hotspotId}" transform="translate(${cx}, 0)" tabindex="0" role="button" aria-label="Periksa atau Rawat Pasu ${potKey}" filter="url(#v4Shadow)">
+            <!-- Tanah Terakota & Butiran Media Semaian -->
+            <ellipse cx="0" cy="352" rx="48" ry="8" fill="#3b2618" stroke="#040709" stroke-width="2.5"/>
+            <circle cx="-20" cy="350" r="2.2" fill="#6d4c34"/><circle cx="16" cy="351" r="2.4" fill="#8b6246"/><circle cx="0" cy="349" r="2" fill="#543825"/>
+            <polygon class="hotspot-outline" points="-50,365 50,365 34,422 -34,422" fill="url(#v4Terracotta)" stroke="#040709" stroke-width="4"/>
+            <rect x="-58" y="352" width="116" height="16" rx="3" fill="#b3653b" stroke="#040709" stroke-width="3.5"/>
+            <line x1="-54" y1="355" x2="54" y2="355" stroke="#fdba74" stroke-opacity="0.35" stroke-width="1.8"/>
+            <rect x="-28" y="380" width="56" height="22" rx="3" fill="#e7dcc3" stroke="#040709" stroke-width="2"/>
+            <text x="0" y="395" text-anchor="middle" fill="#10252d" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">PASU ${potKey}</text>
+            ${plantBodySVG}
+            <g class="hotspot-hint-tag">
+              <rect x="-70" y="${hintY}" width="140" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
+              <text x="0" y="${hintY + 19}" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">${isCured ? `Pasu ${potKey} (Sihat)` : `Periksa Pasu ${potKey}`}</text>
+            </g>
+          </g>
+        `;
+      };
+
       return `
         <svg viewBox="0 0 1120 630" class="room-svg" aria-label="Bilik 4: Rumah Hijau Mini dan Rak Semaian">
           <defs>
@@ -3923,6 +4440,19 @@ function renderRoomSVG(viewId) {
               <stop offset="0%" stop-color="#132934"/>
               <stop offset="100%" stop-color="#0b171d"/>
             </linearGradient>
+            <linearGradient id="v4Terracotta" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#7c4223"/>
+              <stop offset="38%" stop-color="#aa5f37"/>
+              <stop offset="100%" stop-color="#69361c"/>
+            </linearGradient>
+            <linearGradient id="v4BenchSteel" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#1c323d"/>
+              <stop offset="48%" stop-color="#315160"/>
+              <stop offset="100%" stop-color="#172a33"/>
+            </linearGradient>
+            <filter id="v4Shadow" x="-15%" y="-15%" width="130%" height="130%">
+              <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#020507" flood-opacity="0.6"/>
+            </filter>
           </defs>
           <rect width="1120" height="630" fill="#0c181f"/>
 
@@ -3930,88 +4460,52 @@ function renderRoomSVG(viewId) {
           <rect x="70" y="28" width="980" height="392" fill="url(#glassPane)" stroke="#040709" stroke-width="5"/>
           <path d="M100 420 Q155 290 215 240 Q240 315 250 420 Z" fill="#081317"/>
           <path d="M840 420 Q890 270 965 215 Q990 325 1015 420 Z" fill="#081317"/>
+          <!-- Kilauan Kaca & Embun Rumah Hijau -->
+          <polygon points="90,42 195,42 90,220" fill="#bae6fd" opacity="0.06"/>
+          <polygon points="574,42 660,42 574,195" fill="#bae6fd" opacity="0.05"/>
           <line x1="315" y1="28" x2="315" y2="420" stroke="#040709" stroke-width="4.5"/>
           <line x1="560" y1="28" x2="560" y2="420" stroke="#040709" stroke-width="4.5"/>
           <line x1="805" y1="28" x2="805" y2="420" stroke="#040709" stroke-width="4.5"/>
+
+          <!-- Dekorasi Latar: Paip Hidroponik PVC Lutsinar & Injap (Hiasan Sahaja) -->
+          <g pointer-events="none" aria-hidden="true">
+            <rect x="822" y="58" width="196" height="18" rx="6" fill="#7ee0eb" fill-opacity="0.16" stroke="#040709" stroke-width="3"/>
+            <rect x="852" y="66" width="18" height="218" rx="5" fill="#7ee0eb" fill-opacity="0.16" stroke="#040709" stroke-width="3"/>
+            <rect x="976" y="66" width="18" height="218" rx="5" fill="#7ee0eb" fill-opacity="0.16" stroke="#040709" stroke-width="3"/>
+            <line x1="830" y1="62" x2="1008" y2="62" stroke="#ffffff" stroke-opacity="0.32" stroke-width="1.8"/>
+            <line x1="856" y1="74" x2="856" y2="276" stroke="#ffffff" stroke-opacity="0.28" stroke-width="1.8"/>
+            <line x1="980" y1="74" x2="980" y2="276" stroke="#ffffff" stroke-opacity="0.28" stroke-width="1.8"/>
+            <path d="M861 190 L861 278" stroke="#1e4d5c" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+            <path d="M985 190 L985 278" stroke="#1e4d5c" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+            <!-- Tolok Tekanan Paip -->
+            <circle cx="922" cy="67" r="14" fill="#172a34" stroke="#040709" stroke-width="2.5"/>
+            <circle cx="922" cy="67" r="9.5" fill="#e7dcc3"/>
+            <line x1="922" y1="67" x2="916" y2="63" stroke="#dc3545" stroke-width="2" stroke-linecap="round"/>
+            <!-- Injap Hiasan Kiri & Kanan -->
+            <circle cx="861" cy="144" r="18" fill="#a8642c" stroke="#040709" stroke-width="3"/>
+            <line x1="846" y1="144" x2="876" y2="144" stroke="#040709" stroke-width="3.5"/>
+            <line x1="861" y1="129" x2="861" y2="159" stroke="#040709" stroke-width="3.5"/>
+            <circle cx="861" cy="144" r="5" fill="#e7dcc3" stroke="#040709" stroke-width="2"/>
+            <circle cx="985" cy="144" r="18" fill="#a8642c" stroke="#040709" stroke-width="3"/>
+            <line x1="970" y1="144" x2="1000" y2="144" stroke="#040709" stroke-width="3.5"/>
+            <line x1="985" y1="129" x2="985" y2="159" stroke="#040709" stroke-width="3.5"/>
+            <circle cx="985" cy="144" r="5" fill="#e7dcc3" stroke="#040709" stroke-width="2"/>
+          </g>
 
           <!-- Lampu Tumbuhan Ungu-Teal & Kon Cahaya -->
           <polygon points="150,118 760,118 820,420 90,420" fill="url(#growPurpleTeal)"/>
           <rect x="140" y="96" width="630" height="26" rx="6" fill="#233742" stroke="#040709" stroke-width="4"/>
           <rect x="160" y="114" width="590" height="10" rx="3" fill="#c084fc" stroke="#040709" stroke-width="2"/>
 
-          <!-- Meja Rumah Hijau -->
+          <!-- Meja Keluli Tahan Karat Rumah Hijau -->
           <rect x="0" y="420" width="1120" height="210" fill="#162831" stroke="#040709" stroke-width="5"/>
-          <rect x="65" y="420" width="990" height="20" fill="#233d49" stroke="#040709" stroke-width="4"/>
+          <rect x="65" y="420" width="990" height="20" fill="url(#v4BenchSteel)" stroke="#040709" stroke-width="4"/>
+          <line x1="68" y1="424" x2="1052" y2="424" stroke="#bae6fd" stroke-opacity="0.28" stroke-width="2"/>
 
-          <!-- PASU A: Klorosis Daun Tua Menguning (Kekurangan N) -->
-          <g class="hotspot" data-hotspot="v4_pot_a" tabindex="0" role="button" aria-label="Periksa atau Rawat Pasu A">
-            <!-- Pasu Tanah Liat -->
-            <polygon class="hotspot-outline" points="168,365 268,365 252,422 184,422" fill="#8b4d2b" stroke="#040709" stroke-width="4"/>
-            <rect x="160" y="352" width="116" height="16" rx="3" fill="#a25a34" stroke="#040709" stroke-width="3.5"/>
-            <rect x="190" y="380" width="56" height="22" rx="3" fill="#e7dcc3" stroke="#040709" stroke-width="2"/>
-            <text x="218" y="395" text-anchor="middle" fill="#10252d" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">PASU A</text>
-            <!-- Batang & Daun -->
-            <path d="M218 352 L218 228" stroke="${cured.A ? '#2ea877' : '#85a64a'}" stroke-width="7" stroke-linecap="round"/>
-            <!-- Daun Bawah (Tua) — Kuning pucat sekata jika belum dirawat -->
-            <path d="M218 322 Q165 304 142 324 Q175 344 218 328 Z" fill="${cured.A ? '#2ea877' : '#e0cc48'}" stroke="#040709" stroke-width="3"/>
-            <path d="M218 314 Q270 296 294 316 Q260 338 218 322 Z" fill="${cured.A ? '#2ea877' : '#d6bf3c'}" stroke="#040709" stroke-width="3"/>
-            <!-- Daun Atas -->
-            <path d="M218 272 Q178 242 158 258 Q186 284 218 278 Z" fill="${cured.A ? '#38c78d' : '#a8c256'}" stroke="#040709" stroke-width="3"/>
-            <path d="M218 264 Q258 234 278 250 Q250 276 218 270 Z" fill="${cured.A ? '#38c78d' : '#a8c256'}" stroke="#040709" stroke-width="3"/>
-            <path d="M218 232 Q204 196 218 182 Q232 196 218 232 Z" fill="${cured.A ? '#4ade80' : '#8fb858'}" stroke="#040709" stroke-width="3"/>
-            <g class="hotspot-hint-tag">
-              <rect x="148" y="144" width="140" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
-              <text x="218" y="163" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">${cured.A ? 'Pasu A (Sihat)' : 'Periksa Pasu A'}</text>
-            </g>
-          </g>
-
-          <!-- PASU B: Daun Ungu Kemerahan (Kekurangan P) -->
-          <g class="hotspot" data-hotspot="v4_pot_b" tabindex="0" role="button" aria-label="Periksa atau Rawat Pasu B">
-            <polygon class="hotspot-outline" points="398,365 498,365 482,422 414,422" fill="#8b4d2b" stroke="#040709" stroke-width="4"/>
-            <rect x="390" y="352" width="116" height="16" rx="3" fill="#a25a34" stroke="#040709" stroke-width="3.5"/>
-            <rect x="420" y="380" width="56" height="22" rx="3" fill="#e7dcc3" stroke="#040709" stroke-width="2"/>
-            <text x="448" y="395" text-anchor="middle" fill="#10252d" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">PASU B</text>
-            <path d="M448 352 L448 240" stroke="${cured.B ? '#2ea877' : '#6f326b'}" stroke-width="7" stroke-linecap="round"/>
-            <!-- Daun Berwarna Ungu Antosianin jika belum dirawat -->
-            <path d="M448 320 Q398 302 378 322 Q408 342 448 326 Z" fill="${cured.B ? '#2ea877' : '#85327b'}" stroke="#040709" stroke-width="3"/>
-            <path d="M448 312 Q498 294 518 314 Q488 336 448 320 Z" fill="${cured.B ? '#2ea877' : '#73266a'}" stroke="#040709" stroke-width="3"/>
-            <path d="M448 276 Q410 250 392 266 Q418 288 448 282 Z" fill="${cured.B ? '#38c78d' : '#96408b'}" stroke="#040709" stroke-width="3"/>
-            <path d="M448 268 Q486 242 504 258 Q478 280 448 274 Z" fill="${cured.B ? '#38c78d' : '#85327b'}" stroke="#040709" stroke-width="3"/>
-            <path d="M448 242 Q436 210 448 198 Q460 210 448 242 Z" fill="${cured.B ? '#4ade80' : '#65285e'}" stroke="#040709" stroke-width="3"/>
-            <g class="hotspot-hint-tag">
-              <rect x="378" y="158" width="140" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
-              <text x="448" y="177" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">${cured.B ? 'Pasu B (Sihat)' : 'Periksa Pasu B'}</text>
-            </g>
-          </g>
-
-          <!-- PASU C: Nekrosis / Tepi Daun Hangus Keperangan (Kekurangan K) -->
-          <g class="hotspot" data-hotspot="v4_pot_c" tabindex="0" role="button" aria-label="Periksa atau Rawat Pasu C">
-            <polygon class="hotspot-outline" points="628,365 728,365 712,422 644,422" fill="#8b4d2b" stroke="#040709" stroke-width="4"/>
-            <rect x="620" y="352" width="116" height="16" rx="3" fill="#a25a34" stroke="#040709" stroke-width="3.5"/>
-            <rect x="650" y="380" width="56" height="22" rx="3" fill="#e7dcc3" stroke="#040709" stroke-width="2"/>
-            <text x="678" y="395" text-anchor="middle" fill="#10252d" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">PASU C</text>
-            <path d="M678 352 L678 232" stroke="#2ea877" stroke-width="7" stroke-linecap="round"/>
-            <!-- Daun Hijau dengan Tepi Hangus Keperangan (Nekrosis) -->
-            <path d="M678 322 Q625 304 602 324 Q635 344 678 328 Z" fill="#2ea877" stroke="${cured.C ? '#040709' : '#b45309'}" stroke-width="${cured.C ? '3' : '5'}"/>
-            <path d="M678 314 Q730 296 754 316 Q720 338 678 322 Z" fill="#2ea877" stroke="${cured.C ? '#040709' : '#92400e'}" stroke-width="${cured.C ? '3' : '5'}"/>
-            ${
-              cured.C
-                ? ''
-                : `
-            <circle cx="606" cy="324" r="6" fill="#78350f" stroke="#040709" stroke-width="2"/>
-            <circle cx="750" cy="316" r="6" fill="#78350f" stroke="#040709" stroke-width="2"/>
-            <circle cx="622" cy="258" r="5" fill="#92400e" stroke="#040709" stroke-width="2"/>
-            <circle cx="734" cy="250" r="5" fill="#92400e" stroke="#040709" stroke-width="2"/>
-            `
-            }
-            <path d="M678 272 Q638 242 618 258 Q646 284 678 278 Z" fill="#38c78d" stroke="${cured.C ? '#040709' : '#92400e'}" stroke-width="${cured.C ? '3' : '4.5'}"/>
-            <path d="M678 264 Q718 234 738 250 Q710 276 678 270 Z" fill="#38c78d" stroke="${cured.C ? '#040709' : '#b45309'}" stroke-width="${cured.C ? '3' : '4.5'}"/>
-            <path d="M678 234 Q664 198 678 184 Q692 198 678 234 Z" fill="#4ade80" stroke="#040709" stroke-width="3"/>
-            <g class="hotspot-hint-tag">
-              <rect x="608" y="146" width="140" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
-              <text x="678" y="165" text-anchor="middle" fill="#f2b749" font-size="13" font-weight="700">${cured.C ? 'Pasu C (Sihat)' : 'Periksa Pasu C'}</text>
-            </g>
-          </g>
+          <!-- PASU A, B & C: Susunan Simptom Nutrien NPK (Diacak Setiap Permainan) -->
+          ${renderNpkPotSVG('A', 218, 144, npkMap.A, cured.A)}
+          ${renderNpkPotSVG('B', 448, 158, npkMap.B, cured.B)}
+          ${renderNpkPotSVG('C', 678, 146, npkMap.C, cured.C)}
 
           <!-- Laci Peralatan Logam Berkunci di Bawah Meja -->
           ${(() => {
@@ -4035,7 +4529,6 @@ function renderRoomSVG(viewId) {
                 : `
               <rect x="298" y="478" width="294" height="88" rx="4" fill="#1c2f38" stroke="#040709" stroke-width="3"/>
               <rect x="405" y="510" width="80" height="22" rx="3" fill="#3a525e" stroke="#040709" stroke-width="2.5"/>
-              <!-- Kunci Tembaga / Padlock -->
               <path d="M435 502 L435 492 C435 484 455 484 455 492 L455 502" fill="none" stroke="#d98238" stroke-width="4.5"/>
               <rect x="431" y="500" width="28" height="24" rx="3" fill="#d98238" stroke="#040709" stroke-width="2.5"/>
               <circle cx="445" cy="512" r="3.5" fill="#05080a"/>
@@ -4102,7 +4595,7 @@ function renderRoomSVG(viewId) {
           })()}
 
           <!-- Dulang Automatik & Nota Sampel Tanah (Terbuka apabila 3 pasu sihat!) -->
-          <g class="hotspot" data-hotspot="v4_soil_note" tabindex="0" role="button" aria-label="Periksa Dulang Automatik Nota Sampel Tanah">
+          <g class="hotspot" data-hotspot="v4_soil_note" tabindex="0" role="button" aria-label="Periksa Dulang Automatik Nota Sampel Tanah" filter="url(#v4Shadow)">
             <rect class="hotspot-outline" x="810" y="330" width="185" height="90" rx="6" fill="#1b303a" stroke="#040709" stroke-width="4"/>
             ${
               allCured
@@ -4139,40 +4632,53 @@ function renderRoomSVG(viewId) {
       return `
         <svg viewBox="0 0 1120 630" class="room-svg" aria-label="Bilik 5: Bilik Rahsia Makmal Agro (Bio-Vault)">
           <defs>
+            <pattern id="v5ArmorTiles" width="70" height="44" patternUnits="userSpaceOnUse">
+              <rect width="70" height="44" fill="none" stroke="#172d36" stroke-width="1.2" stroke-opacity="0.5"/>
+            </pattern>
             <radialGradient id="vaultCore" cx="50%" cy="42%" r="58%">
               <stop offset="0%" stop-color="#2ea877" stop-opacity="0.34"/>
               <stop offset="52%" stop-color="#1b4652" stop-opacity="0.22"/>
               <stop offset="100%" stop-color="#05080a" stop-opacity="0"/>
             </radialGradient>
-            <radialGradient id="hybridGlow" cx="275" cy="285" r="140" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#6ee7b7" stop-opacity="0.5"/>
+            <radialGradient id="hybridGlow" cx="275" cy="285" r="150" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6ee7b7" stop-opacity="0.55"/>
               <stop offset="100%" stop-color="#071315" stop-opacity="0"/>
             </radialGradient>
+            <linearGradient id="v5VaultSteel" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#223642"/>
+              <stop offset="50%" stop-color="#172630"/>
+              <stop offset="100%" stop-color="#0e181f"/>
+            </linearGradient>
+            <filter id="v5Shadow" x="-10%" y="-10%" width="120%" height="125%">
+              <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#020507" flood-opacity="0.68"/>
+            </filter>
           </defs>
           <rect width="1120" height="630" fill="#091217"/>
+          <rect x="0" y="0" width="1120" height="485" fill="url(#v5ArmorTiles)"/>
           <rect width="1120" height="630" fill="url(#vaultCore)"/>
 
           <!-- Paip Siling & Jalur Keselamatan Bio-Vault -->
           <rect x="0" y="34" width="1120" height="16" fill="#13252e" stroke="#040709" stroke-width="3"/>
+          <line x1="0" y1="38" x2="1120" y2="38" stroke="#6ee7b7" stroke-opacity="0.2" stroke-width="1.5"/>
           <rect x="0" y="485" width="1120" height="145" fill="#0a1318" stroke="#040709" stroke-width="5"/>
           <line x1="160" y1="485" x2="70" y2="630" stroke="#05080a" stroke-width="2.5"/>
           <line x1="560" y1="485" x2="560" y2="630" stroke="#05080a" stroke-width="2.5"/>
           <line x1="960" y1="485" x2="1050" y2="630" stroke="#05080a" stroke-width="2.5"/>
 
-          <!-- Kiri: Kebuk Kaca Bercahaya (Spesimen Hibrid 07) -->
-          <g class="hotspot" data-hotspot="v5_hybrid_chamber" tabindex="0" role="button" aria-label="Periksa Kebuk Spesimen Hibrid 07">
+          <!-- Kiri: Kebuk Kaca Bercahaya (Spesimen Hibrid 07 + Buih & Kilauan Kaca) -->
+          <g class="hotspot" data-hotspot="v5_hybrid_chamber" tabindex="0" role="button" aria-label="Periksa Kebuk Spesimen Hibrid 07" filter="url(#v5Shadow)">
             <rect width="300" height="390" x="125" y="100" fill="url(#hybridGlow)" opacity="0.65"/>
             <rect class="hotspot-outline" x="155" y="96" width="240" height="390" rx="14" fill="#0e2228" stroke="#040709" stroke-width="5"/>
             <rect x="176" y="138" width="198" height="295" rx="68" fill="#0b2f2d" stroke="#040709" stroke-width="4"/>
-            <rect x="192" y="156" width="166" height="258" rx="54" fill="#134e46" opacity="0.65"/>
-            <!-- Tumbuhan Spesimen Hibrid 07 di dalam Cecair Nutrien -->
+            <rect x="192" y="156" width="166" height="258" rx="54" fill="#134e46" opacity="0.68"/>
             <path d="M275 390 C275 330 272 280 275 235" stroke="#6ee7b7" stroke-width="6" stroke-linecap="round"/>
             <path d="M275 310 Q232 280 218 298 Q242 325 275 316 Z" fill="#34d399" stroke="#040709" stroke-width="2.5"/>
             <path d="M275 282 Q318 250 332 270 Q306 298 275 288 Z" fill="#34d399" stroke="#040709" stroke-width="2.5"/>
             <circle cx="275" cy="228" r="20" fill="#f2b749" stroke="#040709" stroke-width="3"/>
-            <circle cx="242" cy="240" r="5" fill="#a7f3d0" opacity="0.6"/>
-            <circle cx="308" cy="202" r="4" fill="#a7f3d0" opacity="0.6"/>
-            <circle cx="252" cy="186" r="3.5" fill="#a7f3d0" opacity="0.5"/>
+            <circle cx="242" cy="240" r="5" fill="#a7f3d0" opacity="0.7" class="hybrid-bubble"/>
+            <circle cx="308" cy="212" r="4.5" fill="#a7f3d0" opacity="0.7" class="hybrid-bubble hb-2"/>
+            <circle cx="256" cy="196" r="4" fill="#a7f3d0" opacity="0.6" class="hybrid-bubble hb-3"/>
+            <line x1="196" y1="184" x2="196" y2="386" stroke="#ffffff" stroke-opacity="0.34" stroke-width="4" stroke-linecap="round"/>
             <rect x="195" y="108" width="160" height="24" rx="4" fill="#071014" stroke="#040709" stroke-width="2.5"/>
             <text x="275" y="124" text-anchor="middle" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="700">SPESIMEN HIBRID 07</text>
             <rect x="195" y="446" width="160" height="26" rx="4" fill="#071014" stroke="#040709" stroke-width="2.5"/>
@@ -4183,50 +4689,73 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
-          <!-- Kanan Atas: Papan Taksonomi Hortikultur Bercahaya (4 Spesimen Buah & Daun) -->
-          <g class="hotspot" data-hotspot="v5_taxonomy_board" tabindex="0" role="button" aria-label="Periksa Papan Taksonomi Hortikultur">
+          <!-- Kanan Atas: Papan Taksonomi & Botani Bercahaya (4 Spesimen Buah Tropika) -->
+          <g class="hotspot" data-hotspot="v5_taxonomy_board" tabindex="0" role="button" aria-label="Periksa Papan Taksonomi Hortikultur" filter="url(#v5Shadow)">
             <rect class="hotspot-outline" x="455" y="76" width="540" height="205" rx="10" fill="#182b34" stroke="#040709" stroke-width="5"/>
             <rect x="472" y="92" width="506" height="28" rx="4" fill="#0a161c" stroke="#040709" stroke-width="2.5"/>
-            <text x="725" y="111" text-anchor="middle" fill="#f2b749" font-family="JetBrains Mono, monospace" font-size="12.5" font-weight="700">PAPAN TAKSONOMI HORTIKULTUR · 4 BUAH TROPIKA</text>
+            <text x="725" y="111" text-anchor="middle" fill="#f2b749" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">PAPAN TAKSONOMI &amp; BOTANI · MONOKOT vs DIKOT</text>
 
-            <!-- Plak 1: Durian -->
-            <g transform="translate(476, 130)">
-              <rect width="114" height="134" rx="6" fill="#0e1e26" stroke="#040709" stroke-width="3"/>
-              <ellipse cx="57" cy="54" rx="24" ry="28" fill="#84a93c" stroke="#040709" stroke-width="2.5"/>
-              <path d="M35 44 L29 40 M33 58 L27 58 M79 44 L85 40 M81 58 L87 58 M57 25 L57 18" stroke="#040709" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M57 24 Q74 16 78 28 Q68 34 57 28 Z" fill="#2ea877" stroke="#040709" stroke-width="2"/>
-              <text x="57" y="106" text-anchor="middle" fill="#e7dcc3" font-size="12" font-weight="700">DURIAN</text>
-              <text x="57" y="122" text-anchor="middle" fill="${vaultOpen ? '#6ee7b7' : '#9bb3bd'}" font-size="9.5" font-style="italic">${vaultOpen ? 'D. zibethinus' : '? ? ?'}</text>
-            </g>
-
-            <!-- Plak 2: Mangga -->
-            <g transform="translate(604, 130)">
-              <rect width="114" height="134" rx="6" fill="#0e1e26" stroke="#040709" stroke-width="3"/>
-              <path d="M55 28 C72 28 80 48 73 68 C67 84 44 84 39 68 C35 54 41 28 55 28 Z" fill="#f2b749" stroke="#040709" stroke-width="2.5"/>
-              <path d="M56 28 Q75 18 82 32 Q68 38 56 30 Z" fill="#2ea877" stroke="#040709" stroke-width="2"/>
-              <text x="57" y="106" text-anchor="middle" fill="#e7dcc3" font-size="12" font-weight="700">MANGGA</text>
-              <text x="57" y="122" text-anchor="middle" fill="${vaultOpen ? '#6ee7b7' : '#9bb3bd'}" font-size="9.5" font-style="italic">${vaultOpen ? 'M. indica' : '? ? ?'}</text>
-            </g>
-
-            <!-- Plak 3: Rambutan -->
-            <g transform="translate(732, 130)">
-              <rect width="114" height="134" rx="6" fill="#0e1e26" stroke="#040709" stroke-width="3"/>
-              <circle cx="57" cy="56" r="22" fill="#dc3545" stroke="#040709" stroke-width="2.5"/>
-              <path d="M35 46 L26 41 M34 62 L24 64 M43 75 L38 84 M79 46 L88 41 M80 62 L90 64 M71 75 L76 84 M57 34 L57 24" stroke="#84cc16" stroke-width="2.4" stroke-linecap="round"/>
-              <path d="M58 34 Q74 22 80 33 Q69 39 58 36 Z" fill="#2ea877" stroke="#040709" stroke-width="2"/>
-              <text x="57" y="106" text-anchor="middle" fill="#e7dcc3" font-size="12" font-weight="700">RAMBUTAN</text>
-              <text x="57" y="122" text-anchor="middle" fill="${vaultOpen ? '#6ee7b7' : '#9bb3bd'}" font-size="9.5" font-style="italic">${vaultOpen ? 'N. lappaceum' : '? ? ?'}</text>
-            </g>
-
-            <!-- Plak 4: Nangka -->
-            <g transform="translate(860, 130)">
-              <rect width="114" height="134" rx="6" fill="#0e1e26" stroke="#040709" stroke-width="3"/>
-              <ellipse cx="57" cy="56" rx="22" ry="27" fill="#a3a832" stroke="#040709" stroke-width="2.5"/>
-              <path d="M48 44 L54 44 M62 50 L68 50 M46 60 L52 60 M60 68 L66 68" stroke="#3f4614" stroke-width="2" stroke-linecap="round"/>
-              <path d="M57 28 Q74 18 81 30 Q68 35 57 30 Z" fill="#2ea877" stroke="#040709" stroke-width="2"/>
-              <text x="57" y="106" text-anchor="middle" fill="#e7dcc3" font-size="12" font-weight="700">NANGKA</text>
-              <text x="57" y="122" text-anchor="middle" fill="${vaultOpen ? '#6ee7b7' : '#9bb3bd'}" font-size="9.5" font-style="italic">${vaultOpen ? 'A. heterophyllus' : '? ? ?'}</text>
-            </g>
+            ${(() => {
+              const order =
+                (gameState.puzzles.taxonomyConfig && gameState.puzzles.taxonomyConfig.specimenOrder) || [
+                  'pisang',
+                  'durian',
+                  'nanas',
+                  'mangga',
+                ];
+              const plaqueX = [476, 604, 732, 860];
+              const plaqueMeta = {
+                pisang: {
+                  title: 'PISANG',
+                  sci: 'M. acuminata',
+                  art: `
+                    <path d="M35 66 C42 42 56 30 76 28 C64 42 56 58 55 75 C46 74 39 71 35 66 Z" fill="#facc15" stroke="#040709" stroke-width="2.2"/>
+                    <path d="M46 72 C54 48 68 36 86 35 C75 49 69 64 66 80 C58 79 51 76 46 72 Z" fill="#eab308" stroke="#040709" stroke-width="2.2"/>
+                    <path d="M72 24 L82 28 L79 34 L69 30 Z" fill="#78350f" stroke="#040709" stroke-width="1.8"/>
+                    <path d="M33 36 Q46 22 60 28 Q47 40 33 36 Z" fill="#2ea877" stroke="#040709" stroke-width="1.8"/>
+                  `,
+                },
+                durian: {
+                  title: 'DURIAN',
+                  sci: 'D. zibethinus',
+                  art: `
+                    <ellipse cx="57" cy="54" rx="24" ry="28" fill="#84a93c" stroke="#040709" stroke-width="2.5"/>
+                    <path d="M35 44 L29 40 M33 58 L27 58 M79 44 L85 40 M81 58 L87 58 M57 25 L57 18" stroke="#040709" stroke-width="2.5" stroke-linecap="round"/>
+                    <path d="M57 24 Q74 16 78 28 Q68 34 57 28 Z" fill="#2ea877" stroke="#040709" stroke-width="2"/>
+                  `,
+                },
+                nanas: {
+                  title: 'NANAS',
+                  sci: 'A. comosus',
+                  art: `
+                    <path d="M57 14 L49 34 L40 24 L47 38 L67 38 L74 24 L65 34 Z" fill="#2ea877" stroke="#040709" stroke-width="2" stroke-linejoin="round"/>
+                    <ellipse cx="57" cy="60" rx="20" ry="24" fill="#eab308" stroke="#040709" stroke-width="2.4"/>
+                    <path d="M43 48 L71 70 M41 60 L66 80 M48 40 L73 59 M71 48 L43 70 M73 60 L48 80" stroke="#92400e" stroke-width="1.8" stroke-linecap="round"/>
+                  `,
+                },
+                mangga: {
+                  title: 'MANGGA',
+                  sci: 'M. indica',
+                  art: `
+                    <path d="M55 28 C72 28 80 48 73 68 C67 84 44 84 39 68 C35 54 41 28 55 28 Z" fill="#f2b749" stroke="#040709" stroke-width="2.5"/>
+                    <path d="M56 28 Q75 18 82 32 Q68 38 56 30 Z" fill="#2ea877" stroke="#040709" stroke-width="2"/>
+                  `,
+                },
+              };
+              return order
+                .map((key, idx) => {
+                  const m = plaqueMeta[key] || plaqueMeta.durian;
+                  return `
+                    <g transform="translate(${plaqueX[idx]}, 130)">
+                      <rect width="114" height="134" rx="6" fill="#0e1e26" stroke="#040709" stroke-width="3"/>
+                      ${m.art}
+                      <text x="57" y="106" text-anchor="middle" fill="#e7dcc3" font-size="12" font-weight="700">${m.title}</text>
+                      <text x="57" y="122" text-anchor="middle" fill="${vaultOpen ? '#6ee7b7' : '#9bb3bd'}" font-size="9.5" font-style="italic">${vaultOpen ? m.sci : '? ? ?'}</text>
+                    </g>
+                  `;
+                })
+                .join('');
+            })()}
 
             <g class="hotspot-hint-tag">
               <rect x="615" y="38" width="220" height="28" rx="4" fill="#05080a" stroke="#f2b749" stroke-width="1.5"/>
@@ -4234,21 +4763,27 @@ function renderRoomSVG(viewId) {
             </g>
           </g>
 
-          <!-- Kanan Bawah: Peti Kebal Fius Utama (Kunci Elektronik Taksonomi) -->
+          <!-- Kanan Bawah: Peti Kebal Fius Utama Berperisai (Selak Keluli, Tolok Tekanan & Roda Kebal) -->
           ${(() => {
             const gotFuse = Boolean(gameState.flags.pickedMainFuse);
             const gotNote = Boolean(gameState.flags.pickedEcNote);
             return `
-          <g class="hotspot" data-hotspot="v5_biovault" tabindex="0" role="button" aria-label="Buka Peti Kebal Fius Utama">
-            <rect class="hotspot-outline" x="505" y="310" width="440" height="175" rx="10" fill="#1b2b34" stroke="#040709" stroke-width="5.5"/>
+          <g class="hotspot" data-hotspot="v5_biovault" tabindex="0" role="button" aria-label="Buka Peti Kebal Fius Utama" filter="url(#v5Shadow)">
+            <rect class="hotspot-outline" x="505" y="310" width="440" height="175" rx="10" fill="url(#v5VaultSteel)" stroke="#040709" stroke-width="5.5"/>
             <rect x="525" y="328" width="400" height="139" rx="6" fill="${vaultOpen ? '#081b19' : '#121e24'}" stroke="#040709" stroke-width="3.5"/>
             ${
               vaultOpen
                 ? `
-              <!-- Pintu Kebal Terbuka di Kiri -->
-              <rect x="462" y="316" width="60" height="162" rx="6" fill="#223640" stroke="#040709" stroke-width="4"/>
-              <circle cx="492" cy="397" r="16" fill="#2ea877" stroke="#040709" stroke-width="3"/>
-              <!-- Ruang Dalam Peti Kebal -->
+              <!-- Pintu Kebal Terbuka di Kiri dengan Selak Terundur & Roda Berputar -->
+              <rect x="456" y="316" width="66" height="162" rx="6" fill="#223640" stroke="#040709" stroke-width="4"/>
+              <rect x="514" y="344" width="12" height="14" rx="2" fill="#94a3b8" stroke="#040709" stroke-width="2"/>
+              <rect x="514" y="436" width="12" height="14" rx="2" fill="#94a3b8" stroke="#040709" stroke-width="2"/>
+              <g class="vault-wheel-spin">
+                <circle cx="489" cy="397" r="20" fill="#182a33" stroke="#040709" stroke-width="3"/>
+                <line x1="489" y1="379" x2="489" y2="415" stroke="#d99b38" stroke-width="3.5"/>
+                <line x1="471" y1="397" x2="507" y2="397" stroke="#d99b38" stroke-width="3.5"/>
+                <circle cx="489" cy="397" r="7" fill="#2ea877" stroke="#040709" stroke-width="2.5"/>
+              </g>
               <rect x="542" y="346" width="175" height="104" rx="6" fill="#0d2622" stroke="#1b4652" stroke-width="2.5"/>
               <rect x="734" y="346" width="175" height="104" rx="6" fill="#0d2622" stroke="#1b4652" stroke-width="2.5"/>
               ${
@@ -4258,13 +4793,23 @@ function renderRoomSVG(viewId) {
               }
             `
                 : `
+              <!-- 4 Selak Keluli Berat Terkunci & Tolok Tekanan -->
+              <rect x="514" y="344" width="20" height="14" rx="2" fill="#94a3b8" stroke="#040709" stroke-width="2"/>
+              <rect x="514" y="436" width="20" height="14" rx="2" fill="#94a3b8" stroke="#040709" stroke-width="2"/>
+              <rect x="916" y="344" width="20" height="14" rx="2" fill="#94a3b8" stroke="#040709" stroke-width="2"/>
+              <rect x="916" y="436" width="20" height="14" rx="2" fill="#94a3b8" stroke="#040709" stroke-width="2"/>
               <circle cx="620" cy="397" r="48" fill="#182a33" stroke="#040709" stroke-width="4"/>
-              <circle cx="620" cy="397" r="18" fill="#d99b38" stroke="#040709" stroke-width="3"/>
+              <circle cx="620" cy="397" r="38" fill="none" stroke="#d99b38" stroke-opacity="0.35" stroke-width="2"/>
               <line x1="620" y1="354" x2="620" y2="440" stroke="#040709" stroke-width="4.5"/>
               <line x1="577" y1="397" x2="663" y2="397" stroke="#040709" stroke-width="4.5"/>
+              <circle cx="620" cy="397" r="18" fill="#d99b38" stroke="#040709" stroke-width="3"/>
+              <!-- Tolok Tekanan Analog Mini -->
+              <circle cx="556" cy="356" r="14" fill="#111d24" stroke="#040709" stroke-width="2.5"/>
+              <circle cx="556" cy="356" r="10" fill="#e7dcc3"/>
+              <line x1="556" y1="356" x2="562" y2="349" stroke="#dc3545" stroke-width="2" stroke-linecap="round"/>
               <rect x="692" y="348" width="210" height="96" rx="6" fill="#081116" stroke="#040709" stroke-width="3"/>
               <text x="797" y="378" text-anchor="middle" fill="#ff7b89" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">KUNCI TAKSONOMI</text>
-              <text x="797" y="404" text-anchor="middle" fill="#e7dcc3" font-size="12">Padankan 4 Nama Saintifik Buah</text>
+              <text x="797" y="404" text-anchor="middle" fill="#e7dcc3" font-size="11.5">Padankan Kelas &amp; Nama Buah</text>
               <rect x="742" y="416" width="110" height="16" rx="3" fill="#dc3545" stroke="#040709" stroke-width="2"/>
             `
             }
@@ -4319,9 +4864,21 @@ function renderRoomSVG(viewId) {
   }
 }
 
+const INSPECTABLE_HOTSPOTS = new Set([
+  'v2_soil_chart',
+  'v3_microscope',
+  'v4_pot_a',
+  'v4_pot_b',
+  'v4_pot_c',
+  'v5_taxonomy_board',
+]);
+
 function bindRoomHotspots() {
   dom.roomSceneContainer.querySelectorAll('.hotspot').forEach((el) => {
     const hotspotId = el.dataset.hotspot;
+    if (INSPECTABLE_HOTSPOTS.has(hotspotId)) {
+      el.classList.add('hotspot-inspectable');
+    }
     el.addEventListener('click', () => handleHotspotClick(hotspotId));
     el.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -4336,37 +4893,43 @@ function bindRoomHotspots() {
 // 8B. LOGIK TEKA-TEKI BAHAGIAN 2 (KUNCI TEMBAGA, NPK RUMAH HIJAU & pH TANAH)
 // ============================================================================
 
+function getNpkPotNutrient(potKey) {
+  const map = gameState.puzzles.npkAssignments || { A: 'K', B: 'N', C: 'P' };
+  return map[potKey] || 'N';
+}
+
 function getPotCloseupSVG(potKey, isCured) {
-  const configs = {
-    A: {
-      title: 'Pasu A — Pemeriksaan Daun',
+  const nutrient = getNpkPotNutrient(potKey);
+  const configsByNutrient = {
+    N: {
       leafColor: isCured ? '#2ea877' : '#e0cc48',
       edgeColor: '#040709',
       edgeWidth: 3,
+      hasNecrosisSpots: false,
       caption: isCured
         ? 'Daun tua kembali hijau sihat selepas dirawat.'
         : 'Daun tua di bahagian bawah mengalami klorosis (kuning pucat sekata).',
     },
-    B: {
-      title: 'Pasu B — Pemeriksaan Daun',
+    P: {
       leafColor: isCured ? '#2ea877' : '#85327b',
       edgeColor: '#040709',
       edgeWidth: 3,
+      hasNecrosisSpots: false,
       caption: isCured
         ? 'Pigmen daun kembali hijau normal selepas dirawat.'
         : 'Daun bertukar warna ungu kemerahan (pengumpulan antosianin).',
     },
-    C: {
-      title: 'Pasu C — Pemeriksaan Daun',
+    K: {
       leafColor: '#2ea877',
       edgeColor: isCured ? '#040709' : '#92400e',
       edgeWidth: isCured ? 3 : 7,
+      hasNecrosisSpots: !isCured,
       caption: isCured
         ? 'Tepi daun kembali pulih tanpa kesan hangus.'
         : 'Tepi dan hujung daun tua berwarna perang serta kelihatan hangus bergulung (nekrosis tepi daun).',
     },
   };
-  const cfg = configs[potKey];
+  const cfg = configsByNutrient[nutrient];
   return `
     <div class="inspect-visual-card">
       <svg viewBox="0 0 480 180">
@@ -4374,6 +4937,14 @@ function getPotCloseupSVG(potKey, isCured) {
         <path d="M240 164 L240 50" stroke="#237a57" stroke-width="6" stroke-linecap="round"/>
         <path d="M240 116 Q155 82 118 112 Q165 144 240 124 Z" fill="${cfg.leafColor}" stroke="${cfg.edgeColor}" stroke-width="${cfg.edgeWidth}"/>
         <path d="M240 104 Q325 70 362 100 Q315 132 240 112 Z" fill="${cfg.leafColor}" stroke="${cfg.edgeColor}" stroke-width="${cfg.edgeWidth}"/>
+        ${
+          cfg.hasNecrosisSpots
+            ? `
+          <circle cx="122" cy="112" r="7" fill="#78350f" stroke="#040709" stroke-width="2"/>
+          <circle cx="358" cy="100" r="7" fill="#78350f" stroke="#040709" stroke-width="2"/>
+        `
+            : ''
+        }
         <path d="M240 62 Q216 26 240 16 Q264 26 240 62 Z" fill="${isCured ? '#4ade80' : '#4a8f63'}" stroke="#040709" stroke-width="3"/>
       </svg>
     </div>
@@ -4392,24 +4963,25 @@ function handleNpkPotInteraction(potKey) {
     return;
   }
 
+  const expectedNutrient = getNpkPotNutrient(potKey);
   const selected = gameState.selectedItemId;
-  const fertilizerMap = {
-    baja_n: 'A',
-    baja_p: 'B',
-    baja_k: 'C',
+  const selectedToNutrient = {
+    baja_n: 'N',
+    baja_p: 'P',
+    baja_k: 'K',
   };
 
   // Jika pemain memilih botol baja daripada inventori
-  if (selected && fertilizerMap[selected]) {
-    if (fertilizerMap[selected] === potKey) {
+  if (selected && selectedToNutrient[selected]) {
+    if (selectedToNutrient[selected] === expectedNutrient) {
       cured[potKey] = true;
       removeItemFromInventory(selected);
       playSFX('pickup');
 
       const successMessages = {
-        A: 'Tepat sekali! Daun tua Pasu A yang kuning klorosis kembali hijau segar selepas diberi Baja Nitrogen (N).',
-        B: 'Menjadi! Warna ungu antosianin pada daun Pasu B hilang selepas dirawat dengan Baja Fosforus (P).',
-        C: 'Berjaya! Tepi daun Pasu C yang hangus nekrosis kembali pulih dengan Baja Kalium (K).',
+        N: `Tepat sekali! Daun tua Pasu ${potKey} yang kuning klorosis kembali hijau segar selepas diberi Baja Nitrogen (N).`,
+        P: `Menjadi! Warna ungu antosianin pada daun Pasu ${potKey} hilang selepas dirawat dengan Baja Fosforus (P).`,
+        K: `Berjaya! Tepi daun Pasu ${potKey} yang hangus nekrosis kembali pulih dengan Baja Kalium (K).`,
       };
 
       if (cured.A && cured.B && cured.C) {
@@ -4418,11 +4990,11 @@ function handleNpkPotInteraction(potKey) {
         addTimeBonus(60, 'npk_nutrien');
         showDialogue(
           gameState.playerName,
-          `${successMessages[potKey]} Ketiga-tiga anak benih dah sihat—dulang automatik terbuka dan sistem menambah bonus +60 saat!`
+          `${successMessages[expectedNutrient]} Ketiga-tiga anak benih dah sihat—dulang automatik terbuka dan sistem menambah bonus +60 saat!`
         );
       } else {
         refreshCurrentRoomScene();
-        showDialogue(gameState.playerName, successMessages[potKey]);
+        showDialogue(gameState.playerName, successMessages[expectedNutrient]);
       }
     } else {
       applyTimePenalty(
@@ -4436,12 +5008,12 @@ function handleNpkPotInteraction(potKey) {
 
   // Pemeriksaan dekat simptom daun jika tiada botol baja dipilih
   const symptomDialogues = {
-    A: 'Daun tua di bahagian bawah Pasu A ni kuning pucat sekata... Ini simptom klorosis yang jelas. Nutrien apa yang kurang ya?',
-    B: 'Hmm, daun Pasu B ni bertukar warna ungu kemerahan gelap dan nampak terbantut.',
-    C: 'Perhatikan tepi daun Pasu C ni—berwarna perang, kering dan macam hangus terbakar di pinggirnya.',
+    N: `Daun tua di bahagian bawah Pasu ${potKey} ni kuning pucat sekata... Ini simptom klorosis yang jelas. Nutrien apa yang kurang ya?`,
+    P: `Hmm, daun Pasu ${potKey} ni bertukar warna ungu kemerahan gelap dan nampak terbantut.`,
+    K: `Perhatikan tepi daun Pasu ${potKey} ni—berwarna perang, kering dan macam hangus terbakar di pinggirnya.`,
   };
 
-  showDialogue(gameState.playerName, symptomDialogues[potKey]);
+  showDialogue(gameState.playerName, symptomDialogues[expectedNutrient]);
   setInspectModalWide(false);
   dom.inspectTitle.textContent = `Pemeriksaan Pasu ${potKey} (Rumah Hijau)`;
   dom.inspectBody.innerHTML = `
@@ -4545,11 +5117,25 @@ function openSoilPhWorkbench(initialSample = null) {
   gameState.flags.activePhSample = activeId;
   refreshCurrentRoomScene();
 
-  const renderWorkbench = () => {
+  const getSampleProbeVisuals = (id, sample, tested) => {
+    const numericPh = tested ? parseFloat(String(sample.ph).replace(/[^0-9.]/g, '')) || 7.0 : 0;
+    const needleDeg = tested ? Math.max(-72, Math.min(72, ((numericPh / 14) * 144) - 72)) : -72;
+    const slurryColors = {
+      s1: sample.treated ? '#4e5d3a' : '#3d2817',
+      s2: '#6b4c2e',
+      s3: sample.treated ? '#6b5e46' : '#948e78',
+    };
+    const liquidColor = slurryColors[id] || '#5b4632';
+    const rimColor = sample.treated ? '#34d399' : (sample.cls === 'is-acidic' ? '#fb7185' : (sample.cls === 'is-alkaline' ? '#60a5fa' : '#34d399'));
+    return { numericPh, needleDeg, liquidColor, rimColor };
+  };
+
+  const renderWorkbench = (animateNeedle = false) => {
     const activeSample = getSampleMeta(activeId);
     const isTested = Boolean(gameState.flags.testedSoilSamples[activeId]);
     const solved = Boolean(gameState.puzzles.phSolved || gameState.puzzles.soilCabinet);
     const treatedCount = ['s1', 's2', 's3'].filter((k) => gameState.flags.treatedSoilSamples[k]).length;
+    const probeViz = getSampleProbeVisuals(activeId, activeSample, isTested);
 
     dom.inspectTitle.textContent = 'Uji Kaji pH Tanah & Pengapuran (Meja Kerja)';
     dom.inspectBody.innerHTML = `
@@ -4571,6 +5157,61 @@ function openSoilPhWorkbench(initialSample = null) {
             <span class="ph-lcd-status">
               ${isTested ? activeSample.status : 'Klik kad sampel untuk uji prob'}
             </span>
+          </div>
+        </div>
+
+        <div class="ph-probe-stage">
+          <div class="ph-probe-card">
+            <svg class="ph-probe-svg" viewBox="0 0 200 116" aria-hidden="true">
+              <rect x="0" y="0" width="200" height="116" rx="6" fill="#071217"/>
+              <line x1="16" y1="102" x2="184" y2="102" stroke="#1e3c47" stroke-width="2"/>
+              <!-- Bikar Sampel Tanah -->
+              <path d="M58 28 L64 98 Q65 102 70 102 L130 102 Q135 102 136 98 L142 28" fill="rgba(165, 243, 252, 0.08)" stroke="#7dd3fc" stroke-width="2"/>
+              <path d="M62 56 L65 97 Q66 100 70 100 L130 100 Q134 100 135 97 L138 56 Z" fill="${probeViz.liquidColor}" fill-opacity="0.9"/>
+              <ellipse cx="100" cy="56" rx="38" ry="4.5" fill="${probeViz.liquidColor}" stroke="${probeViz.rimColor}" stroke-width="1.2" stroke-opacity="0.7"/>
+              <line x1="68" y1="42" x2="76" y2="42" stroke="#94a3b8" stroke-width="1.2"/>
+              <line x1="68" y1="68" x2="78" y2="68" stroke="#94a3b8" stroke-width="1.2"/>
+              <line x1="68" y1="84" x2="75" y2="84" stroke="#94a3b8" stroke-width="1.2"/>
+              <!-- Prob Kaca Terendam + Kabel -->
+              <path d="M104 6 C126 6 140 12 146 24" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+              <rect x="95" y="10" width="12" height="14" rx="2" fill="#1e293b" stroke="#040709" stroke-width="1.5"/>
+              <rect x="97" y="24" width="8" height="58" rx="3" fill="#bae6fd" fill-opacity="0.45" stroke="#e0f2fe" stroke-width="1.4"/>
+              <rect x="99.5" y="28" width="2.2" height="46" rx="1" fill="#ffffff" fill-opacity="0.45"/>
+              <circle cx="101" cy="85" r="5" fill="#67e8f9" fill-opacity="0.72" stroke="#0284c7" stroke-width="1.3"/>
+              ${
+                isTested
+                  ? `
+                <circle class="ph-bubble-dot" cx="92" cy="82" r="2.2" fill="#e0f2fe"/>
+                <circle class="ph-bubble-dot b2" cx="110" cy="78" r="1.8" fill="#bae6fd"/>
+                <circle class="ph-bubble-dot b3" cx="101" cy="74" r="2.4" fill="#a7f3d0"/>
+              `
+                  : ''
+              }
+            </svg>
+            <span class="ph-probe-caption">PROB KACA TERENDAM · ${activeId.toUpperCase()}</span>
+          </div>
+
+          <div class="ph-probe-card">
+            <svg class="ph-probe-svg" viewBox="0 0 200 116" aria-hidden="true">
+              <rect x="0" y="0" width="200" height="116" rx="6" fill="#071217"/>
+              <!-- Skala Arka 0-14 (Asid, Optimum 5.5-6.5, Alkali) -->
+              <path d="M26 92 A74 74 0 0 1 73 23" fill="none" stroke="#f43f5e" stroke-width="9" stroke-linecap="round" stroke-opacity="0.78"/>
+              <path d="M75 22 A74 74 0 0 1 97 18" fill="none" stroke="#10b981" stroke-width="10" stroke-opacity="0.95"/>
+              <path d="M100 18 A74 74 0 0 1 174 92" fill="none" stroke="#3b82f6" stroke-width="9" stroke-linecap="round" stroke-opacity="0.75"/>
+              <path d="M36 92 A64 64 0 0 1 164 92" fill="none" stroke="#1e3c47" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <text x="24" y="106" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="8.5" font-weight="700">0</text>
+              <text x="45" y="42" fill="#fca5a5" font-family="JetBrains Mono, monospace" font-size="8.5" font-weight="700">4</text>
+              <text x="96" y="14" fill="#6ee7b7" font-family="JetBrains Mono, monospace" font-size="8.5" font-weight="700">7</text>
+              <text x="148" y="42" fill="#93c5fd" font-family="JetBrains Mono, monospace" font-size="8.5" font-weight="700">10</text>
+              <text x="167" y="106" fill="#93c5fd" font-family="JetBrains Mono, monospace" font-size="8.5" font-weight="700">14</text>
+              <!-- Jarum Meter Analog -->
+              <g class="ph-needle-pivot ${animateNeedle ? 'is-settling' : ''}" style="transform: rotate(${probeViz.needleDeg.toFixed(1)}deg);">
+                <polygon points="97.5,92 100,25 102.5,92" fill="#f2b749" stroke="#040709" stroke-width="1"/>
+              </g>
+              <circle cx="100" cy="92" r="7" fill="#cbd5e1" stroke="#040709" stroke-width="2"/>
+              <circle cx="100" cy="92" r="2.6" fill="#0f172a"/>
+            </svg>
+            <span class="ph-probe-caption">METER ANALOG (Zon Hijau 5.5–6.5)</span>
           </div>
         </div>
 
@@ -4627,12 +5268,12 @@ function openSoilPhWorkbench(initialSample = null) {
 
     dom.inspectBody.querySelectorAll('.ph-beaker-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        playSFX('click');
+        playSFX('bubbleDip');
         activeId = btn.dataset.sample;
         gameState.flags.testedSoilSamples[activeId] = true;
         gameState.flags.activePhSample = activeId;
         refreshCurrentRoomScene();
-        renderWorkbench();
+        renderWorkbench(true);
       });
     });
 
@@ -4698,7 +5339,7 @@ function openSoilPhWorkbench(initialSample = null) {
           gameState.puzzles.soilCabinet = true;
 
           refreshCurrentRoomScene();
-          renderWorkbench();
+          renderWorkbench(true);
           addTimeBonus(60, 'ph_tanah');
           showDialogue(
             gameState.playerName,
@@ -4706,7 +5347,7 @@ function openSoilPhWorkbench(initialSample = null) {
           );
         } else {
           refreshCurrentRoomScene();
-          renderWorkbench();
+          renderWorkbench(true);
           showDialogue(gameState.playerName, successMsg, 'normal');
         }
       });
@@ -5075,6 +5716,7 @@ function openSoilTriangleModal() {
 
     dom.inspectBody.querySelectorAll('.soil-zone-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
+        playSFX('relay');
         const zone = btn.dataset.zone;
         if (gameState.puzzles.soilTriangle) {
           closeInspectModal();
@@ -5083,6 +5725,7 @@ function openSoilTriangleModal() {
 
         if (zone === 'tanah_lom') {
           gameState.puzzles.soilTriangle = true;
+          playSFX('vaultUnlock');
           unlockSecretRoom();
           closeInspectModal();
           addTimeBonus(60, 'tekstur_tanah');
@@ -5181,16 +5824,34 @@ function openMicroscopePuzzleModal() {
     }
   }
 
+  const microConfig =
+    gameState.puzzles.microscopeConfig || {
+      slides: { X: 'dikot', Y: 'monokot' },
+      buttonOrders: {
+        xClass: ['dikot', 'monokot'],
+        xCot: ['2', '1'],
+        yClass: ['monokot', 'dikot'],
+        yCot: ['2', '1'],
+      },
+    };
+  const slideTypes = microConfig.slides;
+  const btnOrders = microConfig.buttonOrders;
+  const expectedXClass = slideTypes.X;
+  const expectedXCot = expectedXClass === 'monokot' ? '1' : '2';
+  const expectedYClass = slideTypes.Y;
+  const expectedYCot = expectedYClass === 'monokot' ? '1' : '2';
+
   let activeSlide = 'X';
   const answers = {
-    xClass: gameState.puzzles.microscope ? 'monokot' : '',
-    xCot: gameState.puzzles.microscope ? '1' : '',
-    yClass: gameState.puzzles.microscope ? 'dikot' : '',
-    yCot: gameState.puzzles.microscope ? '2' : '',
+    xClass: gameState.puzzles.microscope ? expectedXClass : '',
+    xCot: gameState.puzzles.microscope ? expectedXCot : '',
+    yClass: gameState.puzzles.microscope ? expectedYClass : '',
+    yCot: gameState.puzzles.microscope ? expectedYCot : '',
   };
 
   const getSpecimenOcularSVG = (slide) => {
-    if (slide === 'X') {
+    const type = slideTypes[slide] || 'monokot';
+    if (type === 'monokot') {
       // Keratan Rentas Batang Monokotiledon: Berkas Vaskular Tersebar
       const bundles = [
         [120, 70], [82, 85], [158, 86], [62, 120], [108, 114],
@@ -5198,7 +5859,7 @@ function openMicroscopePuzzleModal() {
         [102, 178], [140, 176], [120, 128],
       ];
       return `
-        <svg viewBox="0 0 240 240" aria-label="Keratan rentas batang Spesimen X di bawah mikroskop">
+        <svg viewBox="0 0 240 240" aria-label="Keratan rentas batang Spesimen ${slide} di bawah mikroskop">
           <circle cx="120" cy="120" r="96" fill="#d9efd8" stroke="#1b4652" stroke-width="5"/>
           <circle cx="120" cy="120" r="88" fill="#c3e3be" stroke="#2d6a4f" stroke-width="2.5"/>
           ${bundles
@@ -5238,7 +5899,7 @@ function openMicroscopePuzzleModal() {
       .join('');
 
     return `
-      <svg viewBox="0 0 240 240" aria-label="Keratan rentas batang Spesimen Y di bawah mikroskop">
+      <svg viewBox="0 0 240 240" aria-label="Keratan rentas batang Spesimen ${slide} di bawah mikroskop">
         <circle cx="120" cy="120" r="96" fill="#e9f2cf" stroke="#3f6212" stroke-width="5"/>
         <circle cx="120" cy="120" r="85" fill="#d7e8b3" stroke="#4d7c0f" stroke-width="2"/>
         <!-- Empulur Tengah (Pith) & Gelang Kambium -->
@@ -5251,15 +5912,30 @@ function openMicroscopePuzzleModal() {
     `;
   };
 
+  const renderChoiceButtons = (key, options, labelMap, solved) =>
+    options
+      .map(
+        (val) => `
+          <button type="button" class="micro-choice-btn ${answers[key] === val ? 'selected' : ''}" data-key="${key}" data-val="${val}" ${solved ? 'disabled' : ''}>
+            ${labelMap[val]}
+          </button>
+        `
+      )
+      .join('');
+
   setInspectModalWide(true);
   dom.inspectTitle.textContent = 'Mikroskop Cahaya: Analisis Anatomi Batang (Monokot vs Dikot)';
 
   const renderMicroscopeModal = () => {
     const solved = gameState.puzzles.microscope;
+    const activeType = slideTypes[activeSlide] || 'monokot';
     const traitInfo =
-      activeSlide === 'X'
-        ? '<strong>Spesimen X (100×):</strong> Berkas vaskular <u>tersebar</u> rawak dalam tisu asas. Ciri lapangan: urat daun selari &amp; akar serabut.'
-        : '<strong>Spesimen Y (100×):</strong> Berkas vaskular <u>tersusun dalam satu gelang</u> mengelilingi empulur. Ciri lapangan: urat daun jejala &amp; akar tunjang.';
+      activeType === 'monokot'
+        ? `<strong>Spesimen ${activeSlide} (100×):</strong> Berkas vaskular <u>tersebar</u> rawak dalam tisu asas. Ciri lapangan: urat daun selari, akar serabut &amp; kelopak bunga gandaan 3.`
+        : `<strong>Spesimen ${activeSlide} (100×):</strong> Berkas vaskular <u>tersusun dalam satu gelang</u> mengelilingi empulur. Ciri lapangan: urat daun jejala, akar tunjang &amp; kelopak bunga gandaan 4 atau 5.`;
+
+    const classLabels = { monokot: 'Monokotiledon', dikot: 'Dikotiledon' };
+    const cotLabels = { 1: '1 Kotiledon', 2: '2 Kotiledon' };
 
     dom.inspectBody.innerHTML = `
       <div class="micro-layout">
@@ -5287,15 +5963,13 @@ function openMicroscopePuzzleModal() {
             <div>
               <div class="micro-field-label">Kelas Tumbuhan</div>
               <div class="micro-choice-row">
-                <button type="button" class="micro-choice-btn ${answers.xClass === 'monokot' ? 'selected' : ''}" data-key="xClass" data-val="monokot" ${solved ? 'disabled' : ''}>Monokotiledon</button>
-                <button type="button" class="micro-choice-btn ${answers.xClass === 'dikot' ? 'selected' : ''}" data-key="xClass" data-val="dikot" ${solved ? 'disabled' : ''}>Dikotiledon</button>
+                ${renderChoiceButtons('xClass', btnOrders.xClass, classLabels, solved)}
               </div>
             </div>
             <div>
               <div class="micro-field-label">Bilangan Kotiledon</div>
               <div class="micro-choice-row">
-                <button type="button" class="micro-choice-btn ${answers.xCot === '1' ? 'selected' : ''}" data-key="xCot" data-val="1" ${solved ? 'disabled' : ''}>1 Kotiledon</button>
-                <button type="button" class="micro-choice-btn ${answers.xCot === '2' ? 'selected' : ''}" data-key="xCot" data-val="2" ${solved ? 'disabled' : ''}>2 Kotiledon</button>
+                ${renderChoiceButtons('xCot', btnOrders.xCot, cotLabels, solved)}
               </div>
             </div>
           </div>
@@ -5305,15 +5979,13 @@ function openMicroscopePuzzleModal() {
             <div>
               <div class="micro-field-label">Kelas Tumbuhan</div>
               <div class="micro-choice-row">
-                <button type="button" class="micro-choice-btn ${answers.yClass === 'monokot' ? 'selected' : ''}" data-key="yClass" data-val="monokot" ${solved ? 'disabled' : ''}>Monokotiledon</button>
-                <button type="button" class="micro-choice-btn ${answers.yClass === 'dikot' ? 'selected' : ''}" data-key="yClass" data-val="dikot" ${solved ? 'disabled' : ''}>Dikotiledon</button>
+                ${renderChoiceButtons('yClass', btnOrders.yClass, classLabels, solved)}
               </div>
             </div>
             <div>
               <div class="micro-field-label">Bilangan Kotiledon</div>
               <div class="micro-choice-row">
-                <button type="button" class="micro-choice-btn ${answers.yCot === '1' ? 'selected' : ''}" data-key="yCot" data-val="1" ${solved ? 'disabled' : ''}>1 Kotiledon</button>
-                <button type="button" class="micro-choice-btn ${answers.yCot === '2' ? 'selected' : ''}" data-key="yCot" data-val="2" ${solved ? 'disabled' : ''}>2 Kotiledon</button>
+                ${renderChoiceButtons('yCot', btnOrders.yCot, cotLabels, solved)}
               </div>
             </div>
           </div>
@@ -5337,7 +6009,7 @@ function openMicroscopePuzzleModal() {
 
     dom.inspectBody.querySelectorAll('.micro-slide-tab').forEach((btn) => {
       btn.addEventListener('click', () => {
-        playSFX('click');
+        playSFX('relay');
         activeSlide = btn.dataset.slide;
         renderMicroscopeModal();
       });
@@ -5346,7 +6018,7 @@ function openMicroscopePuzzleModal() {
     dom.inspectBody.querySelectorAll('.micro-choice-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (gameState.puzzles.microscope) return;
-        playSFX('click');
+        playSFX('relay');
         answers[btn.dataset.key] = btn.dataset.val;
         renderMicroscopeModal();
       });
@@ -5365,10 +6037,10 @@ function openMicroscopePuzzleModal() {
         }
 
         const isCorrect =
-          answers.xClass === 'monokot' &&
-          answers.xCot === '1' &&
-          answers.yClass === 'dikot' &&
-          answers.yCot === '2';
+          answers.xClass === expectedXClass &&
+          answers.xCot === expectedXCot &&
+          answers.yClass === expectedYClass &&
+          answers.yCot === expectedYCot;
 
         if (isCorrect) {
           gameState.puzzles.microscope = true;
@@ -5376,9 +6048,11 @@ function openMicroscopePuzzleModal() {
           addTimeBonus(60, 'anatomi_tumbuhan');
           refreshCurrentRoomScene();
           renderMicroscopeModal();
+          const xSummary = expectedXClass === 'monokot' ? 'Monokot (1 kotiledon)' : 'Dikot (2 kotiledon)';
+          const ySummary = expectedYClass === 'monokot' ? 'Monokot (1 kotiledon)' : 'Dikot (2 kotiledon)';
           showDialogue(
             gameState.playerName,
-            'Tepat sekali! Monokot (1 kotiledon) & Dikot (2 kotiledon) disahkan (+60 SAAT!). Klik! Pintu kaca Peti Spesimen & Alatan di sebelah kanan terbuka—ambil Pemutar Skru Berpenebat di dalamnya!'
+            `Tepat sekali! Spesimen X ialah ${xSummary} & Spesimen Y ialah ${ySummary} (+60 SAAT!). Klik! Pintu kaca Peti Spesimen & Alatan di sebelah kanan terbuka—ambil Pemutar Skru Berpenebat di dalamnya!`
           );
         } else {
           applyTimePenalty(
@@ -5401,6 +6075,10 @@ function openMicroscopePuzzleModal() {
 
 function getFruitPlaqueIconSVG(fruitKey) {
   switch (fruitKey) {
+    case 'pisang':
+      return `<svg viewBox="0 0 40 40" width="32" height="32"><path d="M9 26 C12 16 18 11 27 10 C22 16 19 22 18 29 C14 29 11 27 9 26 Z" fill="#facc15" stroke="#040709" stroke-width="1.8"/><path d="M14 29 C18 19 24 14 32 13 C27 19 24 25 23 32 C19 32 16 30 14 29 Z" fill="#eab308" stroke="#040709" stroke-width="1.8"/><path d="M25 8 L30 10 L29 13 L24 11 Z" fill="#78350f" stroke="#040709" stroke-width="1.4"/><path d="M9 13 Q14 7 21 10 Q15 15 9 13 Z" fill="#2ea877" stroke="#040709" stroke-width="1.4"/></svg>`;
+    case 'nanas':
+      return `<svg viewBox="0 0 40 40" width="32" height="32"><path d="M20 4 L17 13 L12 9 L15 15 L25 15 L28 9 L23 13 Z" fill="#2ea877" stroke="#040709" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="20" cy="25" rx="9" ry="10.5" fill="#eab308" stroke="#040709" stroke-width="2"/><path d="M14 19 L26 29 M13 25 L24 34 M16 16 L27 25 M26 19 L14 29 M27 25 L16 34" stroke="#92400e" stroke-width="1.4" stroke-linecap="round"/></svg>`;
     case 'durian':
       return `<svg viewBox="0 0 40 40" width="32" height="32"><ellipse cx="20" cy="22" rx="11" ry="13" fill="#84a93c" stroke="#040709" stroke-width="2"/><path d="M9 17 L5 14 M8 24 L4 24 M31 17 L35 14 M32 24 L36 24 M20 9 L20 5" stroke="#040709" stroke-width="2" stroke-linecap="round"/><path d="M20 9 Q28 4 30 10 Q25 14 20 11 Z" fill="#2ea877" stroke="#040709" stroke-width="1.5"/></svg>`;
     case 'mangga':
@@ -5413,78 +6091,132 @@ function getFruitPlaqueIconSVG(fruitKey) {
   }
 }
 
+const ROOM5_FRUIT_SPECS = {
+  pisang: {
+    key: 'pisang',
+    label: 'Pisang',
+    targetClass: 'monokot',
+    target: 'Musa acuminata',
+    traits: 'Urat daun selari · Akar serabut · Kelopak bunga gandaan 3',
+  },
+  durian: {
+    key: 'durian',
+    label: 'Durian',
+    targetClass: 'dikot',
+    target: 'Durio zibethinus',
+    traits: 'Urat daun jejala · Akar tunjang · Kelopak bunga gandaan 5',
+  },
+  nanas: {
+    key: 'nanas',
+    label: 'Nanas',
+    targetClass: 'monokot',
+    target: 'Ananas comosus',
+    traits: 'Urat daun selari · Akar serabut · Kelopak bunga gandaan 3',
+  },
+  mangga: {
+    key: 'mangga',
+    label: 'Mangga',
+    targetClass: 'dikot',
+    target: 'Mangifera indica',
+    traits: 'Urat daun jejala · Akar tunjang · Kelopak bunga gandaan 4–5',
+  },
+};
+
 function openFruitTaxonomyModal() {
-  const fruits = [
-    { key: 'durian', label: 'Durian', target: 'Durio zibethinus' },
-    { key: 'mangga', label: 'Mangga', target: 'Mangifera indica' },
-    { key: 'rambutan', label: 'Rambutan', target: 'Nephelium lappaceum' },
-    { key: 'nangka', label: 'Nangka', target: 'Artocarpus heterophyllus' },
-  ];
+  const taxoConfig =
+    gameState.puzzles.taxonomyConfig || {
+      specimenOrder: ['nanas', 'mangga', 'pisang', 'durian'],
+      classButtonOrders: {
+        pisang: ['dikot', 'monokot'],
+        durian: ['monokot', 'dikot'],
+        nanas: ['monokot', 'dikot'],
+        mangga: ['dikot', 'monokot'],
+      },
+      sciOptionsOrder: [
+        'Mangifera indica',
+        'Musa acuminata',
+        'Artocarpus heterophyllus',
+        'Ananas comosus',
+        'Nephelium lappaceum',
+        'Durio zibethinus',
+        'Carica papaya',
+      ],
+    };
 
-  const scientificOptions = [
-    'Artocarpus heterophyllus',
-    'Carica papaya',
-    'Durio zibethinus',
-    'Mangifera indica',
-    'Musa acuminata',
-    'Nephelium lappaceum',
-    'Artocarpus integer',
-  ];
+  const fruits = taxoConfig.specimenOrder.map((k) => ROOM5_FRUIT_SPECS[k]).filter(Boolean);
+  const scientificOptions = taxoConfig.sciOptionsOrder;
 
-  let selectedFruitKey = 'durian';
-  const pairings = gameState.puzzles.bioVault
-    ? {
-        durian: 'Durio zibethinus',
-        mangga: 'Mangifera indica',
-        rambutan: 'Nephelium lappaceum',
-        nangka: 'Artocarpus heterophyllus',
-      }
-    : {
-        durian: '',
-        mangga: '',
-        rambutan: '',
-        nangka: '',
-      };
+  let selectedFruitKey = fruits[0].key;
+  const pairings = {};
+  const classChoices = {};
+  fruits.forEach((f) => {
+    pairings[f.key] = gameState.puzzles.bioVault ? f.target : '';
+    classChoices[f.key] = gameState.puzzles.bioVault ? f.targetClass : '';
+  });
 
   setInspectModalWide(true);
-  dom.inspectTitle.textContent = 'Padanan Taksonomi Pokok Buah-Buahan (Bio-Vault)';
+  dom.inspectTitle.textContent = 'Taksonomi & Kelas Botani Buah Tropika (Bio-Vault)';
 
   const renderTaxonomyModal = () => {
     const solved = gameState.puzzles.bioVault;
     const activeFruit = fruits.find((f) => f.key === selectedFruitKey) || fruits[0];
+    const classLabels = { monokot: 'Monokotiledon', dikot: 'Dikotiledon' };
 
     dom.inspectBody.innerHTML = `
       <div class="inspect-clue-box" style="margin-bottom:14px;">
         ${
           solved
-            ? '<strong>Kunci Taksonomi Disahkan!</strong> Pintu <strong>Peti Kebal Fius Utama</strong> kini terbuka. Tutup paparan ini dan klik <strong>Fius Utama 30A</strong> serta <strong>Nota Lekat Prof. Razak</strong> di dalam peti kebal untuk mengutipnya!'
-            : `Pilih pokok buah di sebelah kiri, kemudian klik nama saintifik binomial yang sepadan di sebelah kanan. <strong>Aktif sekarang: ${activeFruit.label}</strong>.`
+            ? '<strong>Kunci Taksonomi &amp; Botani Disahkan!</strong> Pintu <strong>Peti Kebal Fius Utama</strong> kini terbuka. Tutup paparan ini dan klik <strong>Fius Utama 30A</strong> serta <strong>Nota Lekat Prof. Razak</strong> di dalam peti kebal untuk mengutipnya!'
+            : `Teliti ciri morfologi setiap pokok buah (urat daun, sistem akar &amp; kelopak bunga), tentukan kelas <strong>Monokotiledon / Dikotiledon</strong>, dan padankan nama saintifik di sebelah kanan. <strong>Aktif: ${activeFruit.label}</strong>.`
         }
       </div>
 
       <div class="taxo-layout">
         <div>
-          <p class="taxo-col-title">1. Spesimen Pokok Buah (Pilih)</p>
+          <p class="taxo-col-title">1. Spesimen &amp; Ciri Morfologi (Pilih Kelas &amp; Nama)</p>
           <div class="taxo-fruit-list">
             ${fruits
               .map((f) => {
                 const assigned = pairings[f.key];
+                const chosenClass = classChoices[f.key];
                 const isActive = !solved && selectedFruitKey === f.key;
+                const isComplete = Boolean(assigned && chosenClass);
+                const btnOrder = taxoConfig.classButtonOrders[f.key] || ['monokot', 'dikot'];
                 return `
-                  <button
-                    type="button"
-                    class="taxo-fruit-btn ${isActive ? 'active' : ''} ${assigned ? 'paired' : ''}"
-                    data-fruit="${f.key}"
-                    ${solved ? 'disabled' : ''}
-                  >
-                    <span class="taxo-fruit-icon">${getFruitPlaqueIconSVG(f.key)}</span>
-                    <span class="taxo-fruit-meta">
-                      <span class="taxo-fruit-name">${f.label}</span>
-                      <span class="taxo-fruit-assigned ${assigned ? '' : 'is-empty'}">
-                        ${assigned ? `<em>${assigned}</em>` : 'Belum dipadankan'}
+                  <div class="taxo-fruit-card ${isActive ? 'active' : ''} ${isComplete ? 'paired' : ''}">
+                    <button
+                      type="button"
+                      class="taxo-fruit-btn"
+                      data-fruit="${f.key}"
+                      ${solved ? 'disabled' : ''}
+                    >
+                      <span class="taxo-fruit-icon">${getFruitPlaqueIconSVG(f.key)}</span>
+                      <span class="taxo-fruit-meta">
+                        <span class="taxo-fruit-name">${f.label}</span>
+                        <span class="taxo-fruit-assigned ${assigned ? '' : 'is-empty'}">
+                          ${assigned ? `<em>${assigned}</em>` : 'Belum padan nama saintifik'}
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
+                    <div class="taxo-fruit-traits">${f.traits}</div>
+                    <div class="taxo-class-row">
+                      ${btnOrder
+                        .map(
+                          (clsVal) => `
+                            <button
+                              type="button"
+                              class="taxo-class-btn ${chosenClass === clsVal ? 'selected' : ''}"
+                              data-fruit-class="${f.key}"
+                              data-class-val="${clsVal}"
+                              ${solved ? 'disabled' : ''}
+                            >
+                              ${classLabels[clsVal]}
+                            </button>
+                          `
+                        )
+                        .join('')}
+                    </div>
+                  </div>
                 `;
               })
               .join('')}
@@ -5526,8 +6258,19 @@ function openFruitTaxonomyModal() {
     dom.inspectBody.querySelectorAll('.taxo-fruit-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (gameState.puzzles.bioVault) return;
-        playSFX('click');
+        playSFX('relay');
         selectedFruitKey = btn.dataset.fruit;
+        renderTaxonomyModal();
+      });
+    });
+
+    dom.inspectBody.querySelectorAll('.taxo-class-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (gameState.puzzles.bioVault) return;
+        playSFX('relay');
+        const fruitKey = btn.dataset.fruitClass;
+        classChoices[fruitKey] = btn.dataset.classVal;
+        selectedFruitKey = fruitKey;
         renderTaxonomyModal();
       });
     });
@@ -5535,15 +6278,15 @@ function openFruitTaxonomyModal() {
     dom.inspectBody.querySelectorAll('.taxo-sci-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (gameState.puzzles.bioVault) return;
-        playSFX('click');
+        playSFX('relay');
         const sci = btn.dataset.sci;
         // Kosongkan mana-mana buah lain yang menggunakan nama saintifik sama
         Object.keys(pairings).forEach((k) => {
           if (pairings[k] === sci) pairings[k] = '';
         });
         pairings[selectedFruitKey] = sci;
-        // Majukan pilihan aktif ke buah seterusnya yang belum dipadankan
-        const nextUnpaired = fruits.find((f) => !pairings[f.key]);
+        // Majukan pilihan aktif ke buah seterusnya yang belum lengkap
+        const nextUnpaired = fruits.find((f) => !pairings[f.key] || !classChoices[f.key]);
         if (nextUnpaired) {
           selectedFruitKey = nextUnpaired.key;
         }
@@ -5562,20 +6305,22 @@ function openFruitTaxonomyModal() {
     const submitBtn = document.getElementById('btn-submit-taxonomy');
     if (submitBtn) {
       submitBtn.addEventListener('click', () => {
-        const allPaired = fruits.every((f) => Boolean(pairings[f.key]));
-        if (!allPaired) {
+        const allComplete = fruits.every((f) => Boolean(pairings[f.key]) && Boolean(classChoices[f.key]));
+        if (!allComplete) {
           showDialogue(
             gameState.playerName,
-            'Aku kena padankan keempat-empat pokok buah (Durian, Mangga, Rambutan, Nangka) dengan nama saintifiknya sebelum mengesahkan!',
+            'Aku kena pilih kelas (Monokotiledon/Dikotiledon) DAN padankan nama saintifik bagi keempat-empat spesimen buah sebelum mengesahkan!',
             'warning'
           );
           return;
         }
 
-        const allCorrect = fruits.every((f) => pairings[f.key] === f.target);
+        const allCorrect = fruits.every(
+          (f) => pairings[f.key] === f.target && classChoices[f.key] === f.targetClass
+        );
         if (allCorrect) {
           gameState.puzzles.bioVault = true;
-          playSFX('pickup');
+          playSFX('vaultUnlock');
 
           addTimeBonus(60, 'nama_saintifik');
           refreshCurrentRoomScene();
@@ -5588,7 +6333,7 @@ function openFruitTaxonomyModal() {
           applyTimePenalty(
             30,
             'nama_saintifik',
-            'Padanan nama saintifik tak tepat! Semak semula Nota Kuliah Taksonomi Buah atau perhatikan ciri genus setiap buah tropika.'
+            'Padanan kelas Monokot/Dikot atau nama saintifik kurang tepat! Semak ciri urat daun, akar, kelopak bunga & Taksonomi Buah dalam Buku Nota Kuliah.'
           );
         }
       });
@@ -5750,13 +6495,13 @@ function openEcCalibrationModal() {
     }
     if (minusBtn) {
       minusBtn.addEventListener('click', () => {
-        playSFX('click');
+        playSFX('relay');
         syncEcUI(currentEc - 0.1);
       });
     }
     if (plusBtn) {
       plusBtn.addEventListener('click', () => {
-        playSFX('click');
+        playSFX('relay');
         syncEcUI(currentEc + 0.1);
       });
     }
@@ -5771,6 +6516,7 @@ function openEcCalibrationModal() {
       confirmBtn.addEventListener('click', () => {
         if (currentEc.toFixed(1) === '1.8') {
           gameState.puzzles.controlPanel = true;
+          playSFX('doorOpen');
           stopCountdownTimer();
           closeInspectModal();
           refreshCurrentRoomScene();
@@ -5950,11 +6696,7 @@ function handleHotspotClick(hotspotId) {
     if (gameState.puzzles.phSolved || gameState.puzzles.soilCabinet) {
       showDialogue(
         gameState.playerName,
-        'Kabinet Sampel Tanah dah disahkan selepas kesemua 3 sampel tanah (S1, S2 & S3) distabilkan ke ~pH 6.2. Semak Peti Alat Mikroskop di atas meja!'
-      );
-      openInspectModal(
-        'Kabinet Sampel Tanah (Disahkan)',
-        'Uji kaji pH &amp; pengapuran bagi ketiga-tiga sampel (S1, S2 &amp; S3) telah disahkan pada <strong>~pH 6.2 (Optimum)</strong>. <strong>Peti Alat Mikroskop</strong> di atas meja kerja kini terbuka!'
+        'Kabinet sampel tanah ni dah pun terbuka selepas ketiga-tiga sampel stabil pada ~pH 6.2.'
       );
     } else {
       showDialogue(
@@ -6043,11 +6785,8 @@ function handleHotspotClick(hotspotId) {
   if (hotspotId === 'v2_secret_bookshelf') {
     showDialogue(
       gameState.playerName,
-      'Rak buku keluli ni berat luar biasa—ada panel pengimbas kod tekstur tanah kat tepi tu. Mungkin terbuka kalau aku masukkan jenis tanah yang tepat dari Carta USDA.'
-    );
-    openInspectModal(
-      'Rak Buku Rahsia (Kunci Kod Tanah)',
-      'Panel kunci mekanikal ini bersambung dengan <strong>Carta Segitiga Tekstur Tanah USDA</strong>. Dapatkan peratusan sampel tanah dan pilih Kanta Pembesar daripada inventori untuk membaca carta.'
+      'Sekadar rak buku biasa buat masa ni...',
+      'normal'
     );
     return;
   }
@@ -6121,11 +6860,7 @@ function handleHotspotClick(hotspotId) {
     } else {
       showDialogue(
         gameState.playerName,
-        'Panel kawalan Makmal Agro ni gelap tanpa kuasa. Aku perlu buka Kotak Fius di sebelah kiri dan pasang Fius Utama 30A dahulu.'
-      );
-      openInspectModal(
-        'Panel Kawalan EC Pintu Utama',
-        'Terminal ini menunggu bekalan kuasa daripada <strong>Kotak Fius</strong> di sebelah kiri pintu.<br/><br/>Langkah: Buka kotak fius dengan memilih <strong>Pemutar Skru Berpenebat</strong>, pasang <strong>Fius Utama 30A</strong> dari Bilik 5, kemudian laraskan bacaan EC tepat.'
+        'Panel kawalan pintu utama ni gelap tanpa bekalan kuasa. Mungkin bersambung dengan kotak fius di sebelah kiri tu.'
       );
     }
     return;
@@ -6194,45 +6929,24 @@ function handleHotspotClick(hotspotId) {
     return;
   }
 
-  const hotspotInfo = {
-    v1_exit_door: {
-      title: gameState.puzzles.controlPanel
-        ? 'Pintu Utama Makmal (TERBUKA)'
-        : 'Pintu Utama Makmal (Kunci Magnetik)',
-      thought: gameState.puzzles.controlPanel
-        ? 'Kunci magnetik dah pun dilepaskan!'
-        : 'Pintu keluli ni dikunci oleh kunci magnetik voltan tinggi. Aku nampak kotak fius di sebelah kiri—mungkin perlu pemutar skru, fius utama, dan pelarasan EC yang tepat untuk nyahaktifkannya.',
-      clue: gameState.puzzles.controlPanel
-        ? 'Status: <strong>DINYAHAKTIFKAN</strong>. Bacaan EC 1.8 mS/cm stabil.'
-        : 'Status: <strong>TERKUNCI RAPAT</strong>. Kunci magnetik disambungkan ke <strong>Kotak Fius</strong> di sebelah kiri pintu. Selesaikan protokol makmal untuk mendapatkan peralatan dan bacaan EC.',
-    },
-    v2_prof_log: {
-      title: 'Buku Log Profesor Razak',
-      thought: 'Profesor Razak meninggalkan catatan ringkas mengenai eksperimen pelajar Semester 1.',
-      clue: '<em>"Ingatan kepada pelajar ISMP Sains Pertanian: Sentiasa rujuk Buku Nota Kuliah jika keliru tentang simptom NPK, pengapuran GML, Segitiga USDA, anatomi tumbuhan, atau taksonomi buah tropika."</em>',
-    },
-    v3_botany_poster: {
-      title: 'Poster Anatomi Monokotiledon vs Dikotiledon',
-      thought: 'Poster rujukan dinding ini membandingkan susunan berkas vaskular, urat daun dan bilangan kotiledon.',
-      clue: '<strong>Monokotiledon:</strong> 1 kotiledon, urat daun selari, berkas vaskular tersebar, akar serabut.<br/><strong>Dikotiledon:</strong> 2 kotiledon, urat daun jejala, berkas vaskular tersusun dalam gelang, akar tunjang.',
-    },
-    v3_herbarium: {
-      title: 'Rak Spesimen Herbarium',
-      thought: 'Balang spesimen dan daun kering disusun mengikut famili botani.',
-      clue: 'Beberapa label spesies buah-buahan tropika (Durian, Mangga, Rambutan, Nangka) dipadankan di papan taksonomi Bilik 5 (Bio-Vault).',
-    },
-    v5_hybrid_chamber: {
-      title: 'Kebuk Kaca Spesimen Hibrid 07',
-      thought: 'Ini Spesimen Hibrid 07 milik Profesor Razak! Sistem hidroponiknya dijaga rapi di bawah lampu kuarantin.',
-      clue: 'Spesimen ini dipelihara dalam larutan nutrien terkawal di Bilik Kebal Bio-Vault. Semak <strong>Papan Taksonomi Hortikultur</strong> dan <strong>Peti Kebal Fius Utama</strong> di sebelah kanan untuk mendapatkan Fius 30A.',
-    },
+  const hotspotMonologues = {
+    v1_exit_door: gameState.puzzles.controlPanel
+      ? 'Kunci magnetik dah pun dilepaskan! Pintu utama kini terbuka.'
+      : 'Pintu keluli ni terkunci rapat. Aku kena selesaikan eksperimen dalam makmal ni dulu.',
+    v2_prof_log:
+      'Buku log Profesor Razak ni dipenuhi catatan penyelidikan makmal... Kalau perlu rujukan teori, Buku Nota Kuliah ada di bahagian atas.',
+    v3_botany_poster:
+      'Poster botani kat dinding ni tunjukkan perbezaan ketara antara Monokotiledon dan Dikotiledon—berkas vaskular tersebar lawan tersusun dalam gelang.',
+    v3_herbarium:
+      'Balang spesimen dan helaian daun kering herbarium disusun rapi mengikut famili botani masing-masing.',
+    v5_hybrid_chamber:
+      'Ini Spesimen Hibrid 07 milik Profesor Razak—masih segar di dalam kebuk kuarantin hidroponik.',
   };
 
-  const info = hotspotInfo[hotspotId];
-  if (!info) return;
+  const monologue = hotspotMonologues[hotspotId];
+  if (!monologue) return;
 
-  showDialogue(gameState.playerName, info.thought, 'normal');
-  openInspectModal(info.title, info.clue);
+  showDialogue(gameState.playerName, monologue, 'normal');
 }
 
 function openInspectModal(title, htmlContent) {
@@ -6391,6 +7105,140 @@ function selectInventoryItem(itemId) {
   renderInventory();
 }
 
+const ITEM_DROP_TARGETS = {
+  kunci_tembaga: ['v4_tool_drawer'],
+  baja_n: ['v4_pot_a', 'v4_pot_b', 'v4_pot_c'],
+  baja_p: ['v4_pot_a', 'v4_pot_b', 'v4_pot_c'],
+  baja_k: ['v4_pot_a', 'v4_pot_b', 'v4_pot_c'],
+  kanta_pembesar: ['v2_soil_chart'],
+  slaid_kaca: ['v3_microscope', 'v3_slide_box'],
+  pemutar_skru: ['v1_fuse_box'],
+  fius_utama: ['v1_fuse_box'],
+};
+
+function attachInventorySlotDrag(btn, item) {
+  if (!btn || !item) return;
+
+  btn.addEventListener('pointerdown', (startEvent) => {
+    if (startEvent.button !== undefined && startEvent.button !== 0) return;
+
+    const startX = startEvent.clientX;
+    const startY = startEvent.clientY;
+    const pointerId = startEvent.pointerId;
+    const validTargets = ITEM_DROP_TARGETS[item.id] || [];
+
+    let isDragging = false;
+    let ghostEl = null;
+    let currentHoverEl = null;
+    let highlightedEls = [];
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      btn.classList.remove('is-dragging');
+      document.body.classList.remove('is-drag-active');
+      if (ghostEl && ghostEl.parentNode) {
+        ghostEl.parentNode.removeChild(ghostEl);
+      }
+      ghostEl = null;
+      if (currentHoverEl) {
+        currentHoverEl.classList.remove('is-drop-hover');
+        currentHoverEl = null;
+      }
+      highlightedEls.forEach((el) => el.classList.remove('is-drop-target-valid'));
+      highlightedEls = [];
+    };
+
+    const beginDrag = (moveEvent) => {
+      isDragging = true;
+      btn.dataset.suppressNextClick = '1';
+      btn.classList.add('is-dragging');
+      document.body.classList.add('is-drag-active');
+      playSFX('click');
+
+      if (dom.roomStage && validTargets.length > 0) {
+        dom.roomStage.querySelectorAll('.hotspot[data-hotspot]').forEach((hs) => {
+          if (validTargets.includes(hs.dataset.hotspot)) {
+            hs.classList.add('is-drop-target-valid');
+            highlightedEls.push(hs);
+          }
+        });
+      }
+
+      ghostEl = document.createElement('div');
+      ghostEl.className = 'drag-ghost-pill';
+      const visual = item.svg || getInventoryItemSVG(item.id) || `<span>${item.icon || '📦'}</span>`;
+      ghostEl.innerHTML = `${visual}<span>${item.name}</span>`;
+      ghostEl.style.left = `${moveEvent.clientX}px`;
+      ghostEl.style.top = `${moveEvent.clientY}px`;
+      document.body.appendChild(ghostEl);
+    };
+
+    const onPointerMove = (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+
+      if (!isDragging) {
+        if (Math.hypot(dx, dy) < 7) return;
+        beginDrag(moveEvent);
+      }
+
+      if (ghostEl) {
+        ghostEl.style.left = `${moveEvent.clientX}px`;
+        ghostEl.style.top = `${moveEvent.clientY}px`;
+      }
+
+      const hitEl = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+      const hotspotEl = hitEl ? hitEl.closest('.hotspot[data-hotspot]') : null;
+      const validHover =
+        hotspotEl && validTargets.includes(hotspotEl.dataset.hotspot) ? hotspotEl : null;
+
+      if (currentHoverEl !== validHover) {
+        if (currentHoverEl) currentHoverEl.classList.remove('is-drop-hover');
+        currentHoverEl = validHover;
+        if (currentHoverEl) currentHoverEl.classList.add('is-drop-hover');
+      }
+    };
+
+    const onPointerUp = (upEvent) => {
+      if (upEvent.pointerId !== pointerId) return;
+      let dropHotspotId = null;
+      if (isDragging) {
+        const hitEl = document.elementFromPoint(upEvent.clientX, upEvent.clientY);
+        const hotspotEl = hitEl ? hitEl.closest('.hotspot[data-hotspot]') : null;
+        if (hotspotEl && validTargets.includes(hotspotEl.dataset.hotspot)) {
+          dropHotspotId = hotspotEl.dataset.hotspot;
+        }
+      }
+      const dragged = isDragging;
+      cleanup();
+
+      if (dragged) {
+        setTimeout(() => {
+          btn.dataset.suppressNextClick = '0';
+        }, 50);
+
+        if (dropHotspotId) {
+          setSelectedInventoryItem(item.id);
+          renderInventory();
+          handleHotspotClick(dropHotspotId);
+        }
+      }
+    };
+
+    const onPointerCancel = (cancelEvent) => {
+      if (cancelEvent.pointerId !== pointerId) return;
+      cleanup();
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+  });
+}
+
 function renderInventory() {
   const slotsHtml = [];
   for (let i = 0; i < MAX_INVENTORY_SLOTS; i += 1) {
@@ -6425,7 +7273,15 @@ function renderInventory() {
   dom.inventorySelectedLabel.classList.toggle('is-active', Boolean(selected));
 
   dom.inventorySlots.querySelectorAll('.inv-slot.has-item').forEach((btn) => {
-    btn.addEventListener('click', () => selectInventoryItem(btn.dataset.itemId));
+    const item = gameState.inventory.find((i) => i.id === btn.dataset.itemId);
+    attachInventorySlotDrag(btn, item);
+    btn.addEventListener('click', () => {
+      if (btn.dataset.suppressNextClick === '1') {
+        btn.dataset.suppressNextClick = '0';
+        return;
+      }
+      selectInventoryItem(btn.dataset.itemId);
+    });
   });
 }
 
@@ -6550,9 +7406,14 @@ const NOTEBOOK_TOPICS = {
           <td>Akar tunjang (Taproot)</td>
         </tr>
         <tr>
+          <td><strong>Bilangan Kelopak Bunga</strong></td>
+          <td>Gandaan 3 (3, 6, 9)</td>
+          <td>Gandaan 4 atau 5</td>
+        </tr>
+        <tr>
           <td><strong>Contoh Tanaman</strong></td>
           <td>Padi, Jagung, Kelapa Sawit, Pisang, Nanas</td>
-          <td>Durian, Mangga, Cili, Kacang Panjang, Getah</td>
+          <td>Durian, Mangga, Rambutan, Nangka, Cili</td>
         </tr>
       </tbody>
     </table>

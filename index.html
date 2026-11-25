@@ -2,7 +2,10 @@
 <html lang="ms">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Escape: Makmal Agro</title>
     <meta
       name="description"
@@ -106,19 +109,37 @@
         <!-- Single Interactive Blue University Matric / Lab Access Card Form -->
         <form id="registration-form" class="matric-form" novalidate aria-labelledby="access-card-heading">
           <div class="agro-matric-card">
-            <!-- Subtle Geometric Security Wave Pattern -->
+            <!-- Top Center Lanyard Punch-Slot -->
+            <div class="matric-lanyard-slot" aria-hidden="true"></div>
+
+            <!-- Holographic Security Wave, Grid & Watermark Pattern -->
             <svg class="matric-card-waves" viewBox="0 0 700 420" preserveAspectRatio="none" aria-hidden="true">
               <defs>
+                <pattern id="holoMicroGrid" width="28" height="28" patternUnits="userSpaceOnUse">
+                  <path d="M28 0 L0 0 0 28" fill="none" stroke="rgba(126,224,235,0.065)" stroke-width="0.8" />
+                  <path d="M14 9 L19 14 L14 19 L9 14 Z" fill="none" stroke="rgba(242,183,73,0.055)" stroke-width="0.7" />
+                </pattern>
                 <linearGradient id="matricWaveGold" x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0%" stop-color="#f2b749" stop-opacity="0.22" />
-                  <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.06" />
+                  <stop offset="50%" stop-color="#34d399" stop-opacity="0.1" />
+                  <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.07" />
+                </linearGradient>
+                <linearGradient id="holoPrismSweep" x1="0" y1="0" x2="1" y2="0.4">
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0" />
+                  <stop offset="45%" stop-color="#6ee7b7" stop-opacity="0.09" />
+                  <stop offset="55%" stop-color="#fde68a" stop-opacity="0.11" />
+                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
                 </linearGradient>
               </defs>
+              <rect width="700" height="420" fill="url(#holoMicroGrid)" />
+              <polygon points="120,0 320,0 180,420 -20,420" fill="url(#holoPrismSweep)" />
               <path d="M-20 320 C120 250 260 390 420 300 C560 220 650 290 730 240 L730 440 L-20 440 Z" fill="url(#matricWaveGold)" />
-              <path d="M-20 355 C140 285 280 410 445 330 C575 265 655 320 730 280" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" />
-              <path d="M-20 378 C150 312 290 424 460 352 C585 298 665 342 730 308" fill="none" stroke="rgba(242,183,73,0.18)" stroke-width="1.2" />
-              <circle cx="615" cy="70" r="110" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1.5" />
-              <circle cx="615" cy="70" r="78" fill="none" stroke="rgba(242,183,73,0.08)" stroke-width="1.2" />
+              <path d="M-20 355 C140 285 280 410 445 330 C575 265 655 320 730 280" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1.4" />
+              <path d="M-20 378 C150 312 290 424 460 352 C585 298 665 342 730 308" fill="none" stroke="rgba(242,183,73,0.22)" stroke-width="1.2" />
+              <path d="M-20 396 C165 336 305 432 478 368 C598 318 672 356 730 326" fill="none" stroke="rgba(52,211,153,0.16)" stroke-width="1" />
+              <circle cx="615" cy="70" r="110" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.5" />
+              <circle cx="615" cy="70" r="78" fill="none" stroke="rgba(242,183,73,0.1)" stroke-width="1.2" />
+              <circle cx="615" cy="70" r="46" fill="none" stroke="rgba(52,211,153,0.09)" stroke-width="1" stroke-dasharray="4 4" />
             </svg>
 
             <!-- Top Header Row: Title + EM Smart Chip -->
@@ -127,6 +148,7 @@
                 <div class="matric-brand-crest" aria-hidden="true">
                   <svg viewBox="0 0 40 40" width="36" height="36">
                     <rect x="3" y="3" width="34" height="34" rx="8" fill="#091f3d" stroke="#f2b749" stroke-width="2" />
+                    <rect x="6" y="6" width="28" height="28" rx="5.5" fill="none" stroke="rgba(52,211,153,0.45)" stroke-width="1" />
                     <path d="M20 9 C15 15 13 21 15 26 C17 30 23 30 25 26 C27 21 25 15 20 9 Z" fill="#f2b749" stroke="#061224" stroke-width="1.6" />
                     <line x1="20" y1="15" x2="20" y2="29" stroke="#061224" stroke-width="1.6" />
                   </svg>
@@ -136,24 +158,33 @@
                 </div>
               </div>
 
-              <!-- Metallic Gold/Silver EM Smart Chip SVG -->
+              <!-- Layered Metallic Gold EMV Smart Chip SVG -->
               <div class="matric-smart-chip" aria-hidden="true">
-                <svg viewBox="0 0 54 40" width="50" height="36">
+                <svg viewBox="0 0 56 42" width="52" height="38">
                   <defs>
                     <linearGradient id="emChipGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#fef3c7" />
+                      <stop offset="38%" stop-color="#eab348" />
+                      <stop offset="72%" stop-color="#b88424" />
+                      <stop offset="100%" stop-color="#f5df9c" />
+                    </linearGradient>
+                    <linearGradient id="emChipCore" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#f7d788" />
-                      <stop offset="48%" stop-color="#d4a23d" />
-                      <stop offset="100%" stop-color="#f1e1b5" />
+                      <stop offset="100%" stop-color="#c9932c" />
                     </linearGradient>
                   </defs>
-                  <rect x="1.5" y="1.5" width="51" height="37" rx="6" fill="url(#emChipGrad)" stroke="#7a5a18" stroke-width="1.5" />
-                  <rect x="16" y="10" width="22" height="20" rx="3" fill="none" stroke="#6b4e13" stroke-width="1.3" />
-                  <line x1="2" y1="14" x2="16" y2="14" stroke="#6b4e13" stroke-width="1.3" />
-                  <line x1="2" y1="26" x2="16" y2="26" stroke="#6b4e13" stroke-width="1.3" />
-                  <line x1="38" y1="14" x2="52" y2="14" stroke="#6b4e13" stroke-width="1.3" />
-                  <line x1="38" y1="26" x2="52" y2="26" stroke="#6b4e13" stroke-width="1.3" />
-                  <line x1="27" y1="2" x2="27" y2="10" stroke="#6b4e13" stroke-width="1.3" />
-                  <line x1="27" y1="30" x2="27" y2="38" stroke="#6b4e13" stroke-width="1.3" />
+                  <rect x="1.5" y="1.5" width="53" height="39" rx="7" fill="url(#emChipGrad)" stroke="#6b4e13" stroke-width="1.6" />
+                  <rect x="4" y="4" width="48" height="34" rx="5" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="0.9" />
+                  <rect x="17" y="10" width="22" height="22" rx="4" fill="url(#emChipCore)" stroke="#5c420e" stroke-width="1.3" />
+                  <rect x="22" y="15" width="12" height="12" rx="2" fill="none" stroke="#6b4e13" stroke-width="1" opacity="0.8" />
+                  <path d="M2 14 H14 C15.8 14 17 15.2 17 17" fill="none" stroke="#5c420e" stroke-width="1.3" />
+                  <path d="M2 28 H14 C15.8 28 17 26.8 17 25" fill="none" stroke="#5c420e" stroke-width="1.3" />
+                  <path d="M54 14 H42 C40.2 14 39 15.2 39 17" fill="none" stroke="#5c420e" stroke-width="1.3" />
+                  <path d="M54 28 H42 C40.2 28 39 26.8 39 25" fill="none" stroke="#5c420e" stroke-width="1.3" />
+                  <line x1="2" y1="21" x2="17" y2="21" stroke="#5c420e" stroke-width="1.2" />
+                  <line x1="39" y1="21" x2="54" y2="21" stroke="#5c420e" stroke-width="1.2" />
+                  <line x1="28" y1="2" x2="28" y2="10" stroke="#5c420e" stroke-width="1.2" />
+                  <line x1="28" y1="32" x2="28" y2="40" stroke="#5c420e" stroke-width="1.2" />
                 </svg>
               </div>
             </div>
@@ -165,14 +196,32 @@
                 <div class="matric-photo-frame">
                   <div id="matric-card-portrait" class="matric-photo-box" aria-label="Potret Avatar Pelajar">
                     <svg viewBox="0 0 64 64" width="100%" height="100%">
-                      <rect width="64" height="64" fill="#122933" />
-                      <path d="M12 64 C14 48 22 44 32 44 C42 44 50 48 52 64 Z" fill="#e6eff2" stroke="#05080a" stroke-width="2.5" />
-                      <path d="M26 44 L32 54 L38 44" fill="#1d4d5c" stroke="#05080a" stroke-width="2" />
-                      <circle cx="32" cy="27" r="13" fill="#d9b493" stroke="#05080a" stroke-width="2.5" />
-                      <path d="M19 25 C19 14 27 11 33 11 C41 11 45 17 45 25 C41 20 35 19 28 20 C23 20 21 23 19 25 Z" fill="#141b1f" stroke="#05080a" stroke-width="2" />
-                      <circle cx="27" cy="28" r="1.7" fill="#05080a" />
-                      <circle cx="37" cy="28" r="1.7" fill="#05080a" />
-                      <path d="M28 34 Q32 36 36 34" fill="none" stroke="#05080a" stroke-width="2" stroke-linecap="round" />
+                      <rect width="64" height="64" fill="#10252f" />
+                      <circle cx="32" cy="30" r="24" fill="#1d4d5c" fill-opacity="0.35" />
+                      <rect x="27" y="38" width="10" height="8" rx="3" fill="#c59b78" />
+                      <path d="M10 64 C12 47 21 43 32 43 C43 43 52 47 54 64 Z" fill="#f1f5f9" stroke="#05080a" stroke-width="2.2" />
+                      <path d="M25 43 L32 55 L39 43 Z" fill="#164452" stroke="#05080a" stroke-width="1.6" />
+                      <path d="M22 44 L28 56 L24 58 L19 48 Z" fill="#ffffff" stroke="#05080a" stroke-width="1.4" />
+                      <path d="M42 44 L36 56 L40 58 L45 48 Z" fill="#ffffff" stroke="#05080a" stroke-width="1.4" />
+                      <rect x="37" y="54" width="9" height="7" rx="1.2" fill="#e2e8f0" stroke="#64748b" stroke-width="1" />
+                      <line x1="40" y1="51.5" x2="40" y2="55.5" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round" />
+                      <circle cx="40" cy="51.5" r="0.9" fill="#f2b749" />
+                      <circle cx="19.5" cy="28" r="2.6" fill="#cfa482" stroke="#05080a" stroke-width="1.6" />
+                      <circle cx="44.5" cy="28" r="2.6" fill="#cfa482" stroke="#05080a" stroke-width="1.6" />
+                      <ellipse cx="32" cy="27.5" rx="12.2" ry="13" fill="#deb896" stroke="#05080a" stroke-width="2.2" />
+                      <path d="M21 31 Q32 41 43 31 Q41 39 32 40.5 Q23 39 21 31 Z" fill="#c99c77" fill-opacity="0.45" />
+                      <ellipse cx="24" cy="31.5" rx="2.1" ry="1.1" fill="#e87a7a" fill-opacity="0.28" />
+                      <ellipse cx="40" cy="31.5" rx="2.1" ry="1.1" fill="#e87a7a" fill-opacity="0.28" />
+                      <path d="M19.2 25.5 C18.8 14 26.5 9.5 33 10 C41.5 10.5 45.5 16.5 44.8 25.5 C41.5 19.5 35.5 18.2 28.5 19.4 C23.8 20.2 21 22.8 19.2 25.5 Z" fill="#151d24" stroke="#05080a" stroke-width="2" />
+                      <path d="M24 14.5 Q32 11.5 40 15" fill="none" stroke="#334155" stroke-width="1.4" stroke-linecap="round" />
+                      <path d="M24 24.4 Q27 23.2 29.8 24.5" fill="none" stroke="#05080a" stroke-width="1.5" stroke-linecap="round" />
+                      <path d="M34.2 24.5 Q37 23.2 40 24.4" fill="none" stroke="#05080a" stroke-width="1.5" stroke-linecap="round" />
+                      <ellipse cx="27" cy="28" rx="1.9" ry="2.1" fill="#05080a" />
+                      <ellipse cx="37" cy="28" rx="1.9" ry="2.1" fill="#05080a" />
+                      <circle cx="26.4" cy="27.2" r="0.7" fill="#ffffff" />
+                      <circle cx="36.4" cy="27.2" r="0.7" fill="#ffffff" />
+                      <path d="M31.5 30.2 L32 32 L32.8 31.8" fill="none" stroke="#a67956" stroke-width="1.1" stroke-linecap="round" />
+                      <path d="M28.2 34.4 Q32 36.6 35.8 34.4" fill="none" stroke="#05080a" stroke-width="1.8" stroke-linecap="round" />
                     </svg>
                   </div>
                   <span class="matric-photo-caption">FOTO PELAJAR</span>
@@ -432,7 +481,12 @@
           <!-- Room SVG & Hotspots injected dynamically by game.js -->
           <div id="room-scene-container" class="room-scene-container"></div>
 
-          <!-- Ghost Case Atmospheric Overlays (Vignette, Dust Motes & Subtle Light Flicker) -->
+          <!-- Ghost Case Atmospheric Overlays (Ambient Cone, Emergency Beacon, Vignette, Dust Motes & Light Flicker) -->
+          <div class="room-ambient-cone" aria-hidden="true"></div>
+          <div class="room-emergency-layer" aria-hidden="true">
+            <span class="emergency-beacon-sweep"></span>
+            <span class="emergency-beacon-glow"></span>
+          </div>
           <div class="room-flicker-layer" aria-hidden="true"></div>
           <div class="room-dust-layer" aria-hidden="true">
             <span class="dust-mote dm-1"></span>
